@@ -443,7 +443,7 @@ Script "Admin_AddBank" (void) NET
 	int amount = GetUserCVar(PlayerNumber(), "admin_amount");
 	int silent = GetUserCVar(PlayerNumber(), "admin_silent");
 	str reason = GetUserCVarString(PlayerNumber(), "admin_reason");
-	if(!GetUserCVar(PlayerNumber(), "money_silent")) {
+	if(!(bool)silent) {
 		BankCredits += amount;
 		Delay(1);
 		SetDBEntry("BankCredits", "ServerBankCredits", BankCredits);
@@ -467,7 +467,7 @@ Script "Admin_ReduceBank" (void) NET
 	int amount = GetUserCVar(PlayerNumber(), "admin_amount");
 	int silent = GetUserCVar(PlayerNumber(), "admin_silent");
 	str reason = GetUserCVarString(PlayerNumber(), "admin_reason");
-	if(!(bool)GetUserCVar(PlayerNumber(), "money_silent")) {
+	if(!(bool)silent) {
 		BankCredits -= amount;
 		Delay(1);
 		SetDBEntry("BankCredits", "ServerBankCredits", BankCredits);
@@ -493,7 +493,7 @@ Script "Admin_AddMoney" (void) NET
 	str reason = GetUserCVarString(pid, "admin_reason");
 	if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
 		terminate;
-	if(!(bool)GetUserCVar(pid, "money_silent")) {
+	if(!(bool)silent) {
 		GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
 		Delay(1);
 		if(PlayerIsLoggedIn(who))
@@ -523,7 +523,7 @@ Script "Admin_ReduceMoney" (void) NET
 	str reason = GetUserCVarString(pid, "admin_reason");
 	if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
 		terminate;
-	if(!GetUserCVar(pid, "money_silent")) {
+	if(!(bool)silent) {
 		TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
 		Delay(1);
 		if(PlayerIsLoggedIn(who))
