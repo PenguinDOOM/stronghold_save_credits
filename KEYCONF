@@ -1,0 +1,14 @@
+addkeysection "Save Credits" SaveCreditsBind
+
+addmenukey "Load Credits" LoadCredits
+
+addmenukey "Admin" Open_AdminMenu
+alias Open_AdminMenu "openmenu AdminMoneyMenu"
+
+alias LoadCredits "pukename \"Credits_Loading\" always 0"
+
+alias admin_bank_add "closemenu;pukename \"Admin_AddBank\" always 0"
+alias admin_bank_reduce "closemenu;pukename \"Admin_ReduceBank\" always 0"
+alias admin_player_peep "closemenu;pukename \"Admin_SeeMoney\" always 0"
+alias admin_player_add "closemenu;pukename \"Admin_AddMoney\" always 0"
+alias admin_player_reduce "closemenu;pukename \"Admin_ReduceMoney\" always 0"

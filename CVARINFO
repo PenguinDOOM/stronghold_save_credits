@@ -1,0 +1,6 @@
+server noarchive int interval = 1;//1~35(1s)
+
+user int admin_amount = 0;
+user noarchive int admin_who = 0;
+user noarchive string admin_reason;
+user int admin_silent;

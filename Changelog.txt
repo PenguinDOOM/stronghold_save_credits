@@ -1,0 +1,53 @@
+v5
+--------------------------------------------------------------
+Added admin menu.
+Added the server binary detection function.
+Most of the code has been rewritten.
+
+v4_fixed
+--------------------------------------------------------------
+Fixed a bug where credits weren't saved after the stage ended.
+
+v4
+--------------------------------------------------------------
+Can now save the completed stage.
+Added "Remove_ServerData" command
+
+How to use "Remove_ServerData"
+-----------------------
+] pukename clear_credits (0 or 1)
+-----------------------
+If nothing is added or 0 is added as an argument, only the server bank will be deleted.
+If you add 1 as an argument, the completed stage data will also be deleted.
+Both go to MAP99 after enter.
+
+v3
+--------------------------------------------------------------
+"StrPaidInitialBankFee" is now saved. Now you don't have to pay 800 credits every time to use the bank.
+You can now load credits on the way, not just when you join. You can bind from control options.
+Now saved when disconnected. (There is a note. For details, read the comment from line 195 of the source code.)
+Added a script to monitor credits so they are preserved when disconnected. You can change the monitoring interval from the console. Default is interval = 1 (1tic)
+Added a script to clear the contents of the database. If you use it, you cannot load and save until you reconnect. (Pukename Clear_Credits)
+The "Show_Credits" command can now check if a bank can be used.
+------------------------
+] pukename clear_credits
+------------------------
+Paid fee: False or True (here)
+Database paid fee: False or True (here)
+Your credits: 0 ~
+Your database credits: 0 ~
+Bank credits: 0 ~
+Bank databse credits: 0 ~
+------------------------
+
+Use variables instead of cvar.
+Some code has been modified / changed.
+The code has become more complex and less readable.
+There should be some bugs added that are not yet known.
+
+v2
+--------------------------------------------------------------
+Added saving bank credits(strongholdrejuvenated required)
+Changed loaded check from inventory to user cvar.
+Clarified the "Show_Credits" command.(pukename show_credits)
+

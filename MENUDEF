@@ -1,0 +1,52 @@
+OptionMenu "AdminMoneyMenu"
+{
+	Title "Admin Menu"
+	Submenu "Bank Menu", "BankMoenyMenu"
+	StaticText " "
+	Submenu "Player Menu", "PlayerMoenyMenu"
+}
+
+OptionValue TrueFalse
+{
+	0, "False"
+	1, "True"
+}
+
+OptionMenu "BankMoenyMenu"
+{
+	Title "Bank Menu"
+	StaticText "Please enter the amount."
+	TextField "Amount", "admin_amount"
+	StaticText " "
+	StaticText "Please enter the reason."
+	TextField "Reason", "admin_reason"
+	StaticText " "
+	StaticText "Don't notify other players."
+	Option "Silent Mode", "admin_silent", "TrueFalse"
+	StaticText " "
+	Command "Add", "admin_bank_add"
+	StaticText " "
+	Command "Reduce", "admin_bank_reduce"
+}
+
+OptionMenu "PlayerMoenyMenu"
+{
+	Title "Player Menu"
+	StaticText "Select Player"
+	PlayerField "Who", "admin_who"
+	StaticText " "
+	StaticText "Please enter the amount. (Not work on peep)"
+	TextField "Amount", "admin_amount"
+	StaticText " "
+	StaticText "Please enter the reason."
+	TextField "Reason", "admin_reason"
+	StaticText " "
+	StaticText "Don't notify other players. (Not work on peep)"
+	Option "Silent Mode", "admin_silent", "TrueFalse"
+	StaticText " "
+	Command "Peep", "admin_player_peep"
+	StaticText " "
+	Command "Add", "admin_player_add"
+	StaticText " "
+	Command "Reduce", "admin_player_reduce"
+}
