@@ -1,6 +1,6 @@
 // from bcsutils
 
-raw Function_Ints = -1;
+raw ACSUtils_Ints = -1;
 
 enum : int { PORT_ZDOOM = 1 };
 enum : int { PORT_GZDOOM = 2 };
@@ -19,15 +19,15 @@ function bool SetActivatorToPlayer2(int player)
 
 function int IdentifySourcePort(void)
 {
-	if (Function_Ints != -1)
-		return Function_Ints;
+	if (ACSUtils_Ints != -1)
+		return ACSUtils_Ints;
 
 	if (GetPlayerAccountName(0) != (str)0)
 	{
 		// GetPlayerAccountName returns a string (possibly empty) in Zandronum
 		// but 0 in GZDoom.
-		Function_Ints = PORT_ZANDRONUM;
-		return Function_Ints;
+		ACSUtils_Ints = PORT_ZANDRONUM;
+		return ACSUtils_Ints;
 	}
 	
 	int tid = UniqueTid();
@@ -35,12 +35,12 @@ function int IdentifySourcePort(void)
 	{
 		// DynamicLight is a built-in actor in GZDoom.
 		Thing_Remove(tid);
-		Function_Ints = PORT_GZDOOM;
-		return Function_Ints;
+		ACSUtils_Ints = PORT_GZDOOM;
+		return ACSUtils_Ints;
 	}
 	
-	Function_Ints = PORT_ZDOOM;
-	return Function_Ints;
+	ACSUtils_Ints = PORT_ZDOOM;
+	return ACSUtils_Ints;
 }
 
 function str GetPortName(void)
