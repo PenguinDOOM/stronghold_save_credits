@@ -1,6 +1,22 @@
+v5_1
+--------------------------------------------------------------
+Fixed a bug that caused a binary check every time.
+Fixed v4 changelog.
+Added "Display_Progress" command
+
+How to use "Display_Progress"
+-----------------------
+] pukename Display_Progress [Map number](optional argument)
+-----------------------
+This prints all progress to the client's console.
+Adding an argument will print the progress of the map accordingly.
+It only shows whether the map has been cleared or not, it does not show the clear time.
+
+
 v5_fixed
 --------------------------------------------------------------
 Fixed admin menu.
+
 
 v5
 --------------------------------------------------------------
@@ -8,9 +24,11 @@ Added admin menu.
 Added the server binary detection function.
 Most of the code has been rewritten.
 
+
 v4_fixed
 --------------------------------------------------------------
 Fixed a bug where credits weren't saved after the stage ended.
+
 
 v4
 --------------------------------------------------------------
@@ -19,11 +37,12 @@ Added "Remove_ServerData" command
 
 How to use "Remove_ServerData"
 -----------------------
-] pukename clear_credits (0 or 1)
+] pukename Remove_ServerData (0 or 1)
 -----------------------
 If nothing is added or 0 is added as an argument, only the server bank will be deleted.
-If you add 1 as an argument, the completed stage data will also be deleted.
+If you add 1 to the argument, the completed stage data will be deleted.
 Both go to MAP99 after enter.
+
 
 v3
 --------------------------------------------------------------
@@ -48,6 +67,7 @@ Use variables instead of cvar.
 Some code has been modified / changed.
 The code has become more complex and less readable.
 There should be some bugs added that are not yet known.
+
 
 v2
 --------------------------------------------------------------
