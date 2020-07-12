@@ -111,7 +111,7 @@ Script "Server_Start" OPEN
 {
 	Delay(35);
 	loopstop = false;
-	if(LoadedBankCredits)
+	if(!LoadedBankCredits)
 		ACS_NamedExecuteAlways("Check_Server", 0, 0, 0, 0);
 	CheckMode();
 	strongholdrejuvenated = CheckRejuvenatedServer();
@@ -539,6 +539,60 @@ Script "Admin_ReduceMoney" (void) NET
 		Log(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 		SetActivatorToPlayer2(who);
 		Print(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+	}
+}
+
+Script "Display_Progress" (int MAPNo) NET
+{
+	if(MAPNo == 51 || MAPNo == 53 || MAPNo == 55 || MAPNo >= 57) {
+		ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
+		terminate;
+	}
+	if(MAPNo >= 36 && MAPNo <= 39) {
+		ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
+		terminate;
+	}
+	if(MAPNo >= 45 && MAPNo <= 49) {
+		ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
+		terminate;
+	}
+	If(MAPNo == 0) {
+		for (int i = 0; i < 100; i++) {
+			if(i == 0 || i == 51 || i == 53 || i == 55 || i >= 57)
+				continue;
+			if(i >= 36 && i <= 39)
+				continue;
+			if(i >= 45 && i <= 49)
+				continue;
+			if(MapScores[i] == -1 || MapScores[i] >= 1){
+				ACS_NamedExecuteAlways("Output_Client", 0, i, 1, 0);
+			} else {
+				ACS_NamedExecuteAlways("Output_Client", 0, i, 0, 0);
+			}
+		}
+	} else {
+		if(MapScores[MAPNo] == -1 || MapScores[MAPNo] >= 1){
+			ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 1, 0);
+		} else {
+			ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 0, 0);
+		}
+	}
+}
+
+Script "Output_Client" (int i, int j) CLIENTSIDE
+{
+	if(j == 1){
+		if(i < 10)
+			Log(s:"STR0", d:i, s:" ", s:"Cleared");
+		else
+			Log(s:"STR", d:i, s:" ", s:"Cleared");
+	} else if(j == 0){
+		if(i < 10)
+			Log(s:"STR0", d:i, s:" ", s:"Not cleared");
+		else
+			Log(s:"STR", d:i, s:" ", s:"Not cleared");
+	} else {
+		Log(s:"No data");
 	}
 }
 
