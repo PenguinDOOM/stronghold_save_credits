@@ -1,6 +1,6 @@
 #library "SAVE"
-#include "zcommon.h.bcs"
-#include "function.bcs"
+#include "zcommon.h"
+#include "bcsutils.bcs"
 #define MAXPLAYERS 65
 #define PLAYERS_TID 5000
 #define GAME_NET_TEAMGAME 4
