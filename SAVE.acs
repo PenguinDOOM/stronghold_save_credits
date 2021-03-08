@@ -37,17 +37,17 @@ bool loopskip[MAXPLAYERS];
 bool CheckServerBinary
 {
 	if(IsClient())
-		return true;
+		return false;
 	else if(IsServer())
 		if(GetCVar("tspg_badwordsenabled"))// Check TSPG
-			return false;
+			return true;
 		else
 			if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false"))// Check DUD
-				return false;
-			else
 				return true;
+			else
+				return false;
 			
-	return false;
+	return true;
 }
 
 void CheckMode
@@ -187,8 +187,10 @@ Script "Server_Start" OPEN
 
 Script "Check_Server" (void)
 {
-	assert(CheckServerBinary(), "Detected public server cluster binary like tspg etc.");
-	assert(SetCVar("tspg_badwordsenabled", 1), "Detected stock binary.");
+	if(CheckServerBinary())
+		Log(s:"Detected public server cluster binary like tspg etc.");
+	else
+		Log(s:"Detected stock binary.");
 }
 
 Script "Check_Load" ENTER
