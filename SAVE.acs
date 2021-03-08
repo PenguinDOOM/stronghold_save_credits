@@ -34,7 +34,7 @@ bool CheckPublic = false;
 bool loopstop = false;
 bool loopskip[MAXPLAYERS];
 
-function bool CheckServerBinary(void)// False is for using assert.
+bool CheckServerBinary
 {
 	if(IsClient())
 		return true;
@@ -50,7 +50,7 @@ function bool CheckServerBinary(void)// False is for using assert.
 	return false;
 }
 
-function void CheckMode(void)
+void CheckMode
 {
 	bool EnableMods;
 	switch(GameType()) {
@@ -81,7 +81,7 @@ function void CheckMode(void)
 	}
 }
 
-function bool CheckRejuvenatedServer(void)
+bool CheckRejuvenatedServer
 {
 	if(IsClient())
 		return false;
@@ -94,7 +94,7 @@ function bool CheckRejuvenatedServer(void)
 	return true;
 }
 
-function bool CheckRejuvenatedClient(int pid)
+bool CheckRejuvenatedClient(int pid)
 {
 	if(IsServer())
 		return false;
