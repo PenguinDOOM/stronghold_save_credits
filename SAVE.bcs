@@ -279,7 +279,7 @@ Script "Save_Process" (int pid, int unload, int save)
 		terminate;
 	if(!(bool)unload && (bool)save) {
 		BeginDBTransaction();
-			if(PlayerIsLoggedIn(pid)) {
+			if(PlayerIsLoggedIn(pid) && PlayerInGame(pid)) {
 				SaveAccountName = GetPlayerAccountName(pid);
 				CacheCredit = CheckInventory("CoinItem");
 				if(strongholdrejuvenated) {
