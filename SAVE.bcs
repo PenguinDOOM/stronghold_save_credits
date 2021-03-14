@@ -347,10 +347,12 @@ Script "Server_Seve" UNLOADING
 
 Script "Client_Disconnect" (int pid) CLIENTSIDE
 {
-	LoadedCredits[pid] = False;
-	NoStartLoad[pid] = False;
-	Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
-	ConsoleCommand("Disconnect");
+	if(pid == ConsolePlayerNumber()) {
+		LoadedCredits[pid] = False;
+		NoStartLoad[pid] = False;
+		Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
+		ConsoleCommand("Disconnect");
+	}
 }
 
 Script "Client_Disconnect2" (int pid) DISCONNECT
