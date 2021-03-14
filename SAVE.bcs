@@ -145,13 +145,18 @@ void CheckMode()
 Script "Server_Start" OPEN
 {
 	Delay(35);
-	if(!LoadedBankCredits)
-		ACS_NamedExecuteAlways("Check_Server", 0, 0, 0, 0);
 	CheckMode();
 	strongholdrejuvenated = CheckRejuvenatedServer();
 	int i;
 	str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
 	if(!LoadedBankCredits) {
+		if(CheckServerBinary()) {
+			Log(s:"Detected public server cluster binary like tspg etc.");
+			CheckPublic = True;
+		} else {
+			Log(s:"Detected stock binary.");
+			CheckPublic = False;
+		}
 		for (i = 0; i < 100; i++) {
 			MPD2 = StrParam(s:MPD, d:i);
 			MapScores[i] = GetDBEntry("ServerProgress", MPD2);
@@ -190,17 +195,6 @@ Script "Server_Start" OPEN
 		SetDBEntry("ServerProgress", "FamiliarMapsData", FamiliarMapsOpen);
 	EndDBTransaction();
 	log(s:"Saved Server Data");
-}
-
-Script "Check_Server"
-{
-	if(CheckPublic) {
-		Log(s:"Detected public server cluster binary like tspg etc.");
-		CheckPublic = True;
-	} else {
-		Log(s:"Detected stock binary.");
-		CheckPublic = False;
-	}
 }
 
 Script "Check_Load" ENTER
