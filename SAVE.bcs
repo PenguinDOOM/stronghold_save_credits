@@ -82,528 +82,686 @@ global int 61:BankCredits;
 
 bool strongholdrejuvenated;
 
-bool CheckServerBinary()
+strict namespace ssc
 {
-	if(IsServerOnly()) {
-		if(GetCVar("tspg_badwordsenabled"))// Check TSPG
-			return true;
-		else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false"))// Check DUD
-			return true;
+	bool CheckServerBinary()
+	{
+		if(IsServerOnly())
+		{
+			if(GetCVar("tspg_badwordsenabled"))// Check TSPG
+				return true;
+			else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false"))// Check DUD
+				return true;
+			else
+				return false;
+		}
 		else
+		{
 			return false;
-	} else {
-		return false;
+		}
 	}
-}
 
-bool CheckRejuvenatedServer()
-{
-	if(IsServerOnly()) {
-		if(SetCVar("stronghold_infinitelives", GetCVar("stronghold_infinitelives")))
-			return true;
+	bool CheckRejuvenatedServer()
+	{
+		if(IsServerOnly())
+		{
+			if(SetCVar("stronghold_infinitelives", GetCVar("stronghold_infinitelives")))
+				return true;
+			else
+				return false;
+		}
 		else
+		{
 			return false;
-	} else {
-		return false;
+		}
 	}
-}
 
 
-bool CheckRejuvenatedClient(int pid)
-{
-	if(IsClientOnly()) {
-		if(SetUserCVar(pid, "stronghold_cl_announcer", GetUserCVar(pid, "stronghold_cl_announcer")))
-			return true;
+	bool CheckRejuvenatedClient(int pid)
+	{
+		if(IsClientOnly())
+		{
+			if(SetUserCVar(pid, "stronghold_cl_announcer", GetUserCVar(pid, "stronghold_cl_announcer")))
+				return true;
+			else
+				return false;
+		}
 		else
+		{
 			return false;
-	} else {
-		return false;
+		}
 	}
-}
 
-void CheckMode()
-{
-	bool EnableMods;
-	switch(GameType()) {
-		case GAME_NET_COOPERATIVE:
-			EnableMods = True;
-			break;
-		case GAME_TITLE_MAP:
-			EnableMods = False;
-			//Log(s:"This is normal. Please ignore.");
-			break;
-		case GAME_SINGLE_PLAYER:
-		case GAME_NET_DEATHMATCH:
-		case GAME_NET_TEAMGAME:
-		default:
-			EnableMods = False;
-			Log(s:"Different game modes.");
-			break;
+	void CheckMode()
+	{
+		bool EnableMods;
+		switch(GameType())
+		{
+			case GAME_NET_COOPERATIVE:
+				EnableMods = True;
+				break;
+			case GAME_TITLE_MAP:
+				EnableMods = False;
+				break;
+			case GAME_SINGLE_PLAYER:
+			case GAME_NET_DEATHMATCH:
+			case GAME_NET_TEAMGAME:
+			default:
+				EnableMods = False;
+				Log(s:"Different game modes.");
+				break;
+		}
 	}
-}
 
-Script "Server_Start" OPEN
-{
-	Delay(35);
-	CheckMode();
-	strongholdrejuvenated = CheckRejuvenatedServer();
-	int i;
-	str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
-	if(!LoadedBankCredits) {
-		if(CheckServerBinary()) {
-			Log(s:"Detected public server cluster binary like tspg etc.");
-			CheckPublic = True;
-		} else {
-			Log(s:"Detected stock binary.");
-			CheckPublic = False;
-		}
-		for (i = 0; i < 100; i++) {
-			MPD2 = StrParam(s:MPD, d:i);
-			MapScores[i] = GetDBEntry("ServerProgress", MPD2);
-		}
-		for (i = 0; i < 5; i++) {
-			SCD2 = StrParam(s:SCD, d:i);
-			str52code[i] = GetDBEntry("ServerProgress", SCD2);
-		}
-		BankCredits = GetDBEntry("BankCredits", "ServerBankCredits");
-		str52codeinit = GetDBEntry("ServerProgress", "Str52CodeinitData");
-		STR50Open = GetDBEntry("ServerProgress", "Str50Data");
-		STR52Open = GetDBEntry("ServerProgress", "Str52Data");
-		STR54Open = GetDBEntry("ServerProgress", "Str54Data");
-		STR56Open = GetDBEntry("ServerProgress", "Str56Data");
-		FamiliarMapsOpen = GetDBEntry("ServerProgress", "FamiliarMapsData");
-		LoadedBankCredits = True;
-		log(s:"Loaded Server Data");
-		Changelevel("MAP99", 0, 0, -1);
-		terminate;
-	}
-	BeginDBTransaction();
-		for (i = 0; i < 100; i++) {
-			MPD2 = StrParam(s:MPD, d:i);
-			SetDBEntry("ServerProgress", MPD2, MapScores[i]);
-		}
-		for (i = 0; i < 5; i++) {
-			SCD2 = StrParam(s:SCD, d:i);
-			SetDBEntry("ServerProgress", SCD2, str52code[i]);
-		}
-		SetDBEntry("BankCredits", "ServerBankCredits", BankCredits);
-		SetDBEntry("ServerProgress", "Str52CodeinitData", str52codeinit);
-		SetDBEntry("ServerProgress", "Str50Data", STR50Open);
-		SetDBEntry("ServerProgress", "Str52Data", STR52Open);
-		SetDBEntry("ServerProgress", "Str54Data", STR54Open);
-		SetDBEntry("ServerProgress", "Str56Data", STR56Open);
-		SetDBEntry("ServerProgress", "FamiliarMapsData", FamiliarMapsOpen);
-	EndDBTransaction();
-	log(s:"Saved Server Data");
-}
-
-Script "Check_Load" ENTER
-{
-	CheckMode();
-	if(!PlayerIsLoggedIn(PlayerNumber())) {
-		NoStartLoad[PlayerNumber()] = True;
-		terminate;
-	}
-	NoStartLoad[PlayerNumber()] = False;
-	str PlayerName = GetPlayerAccountName(PlayerNumber());
-	if(LoadedCredits[PlayerNumber()]) {
-		terminate;
-	}
-	ACS_NamedExecuteAlways("Credits_Loading", 0, 0, 0, 0);
-}
-
-Script "Credits_Loading" NET 
-{
-	CheckMode();
-	if(LoadedCredits[PlayerNumber()] || !PlayerIsLoggedIn(PlayerNumber()) || !PlayerInGame(PlayerNumber()) || !(bool)GetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber())))
-		terminate;
-	int CacheCredits_A = GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), CacheCredits_B = CheckInventory("CoinItem");
-	TakeInventory("CoinItem", 0x7FFFFFFF);
-	if(!strongholdrejuvenated) {
-		if(!NoStartLoad[PlayerNumber()]) {
-			GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
-		} else {
-			CacheCredits_B -= 300;
-			CacheCredits_B += CacheCredits_A;
-			GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
-		}
-	} else {	
-		if(!(bool)CheckInventory("StrPaidInitialBankFee")) {
-			if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()))) {
-				if(!NoStartLoad[PlayerNumber()]) {
-					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
-				} else {
-					CacheCredits_B -= StartingCredits < 800 ? 800 : StartingCredits;
-					CacheCredits_B += CacheCredits_A;
-					GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
-				}
-				GiveInventory("StrPaidInitialBankFee", 1);
-			} else {
-				if(!NoStartLoad[PlayerNumber()]) {
-					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
-				} else {
-					CacheCredits_B -= StartingCredits < 800 ? 800 : StartingCredits;
-					CacheCredits_B += CacheCredits_A;
-					GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
-				}
+	Script "Server_Start" OPEN
+	{
+		Delay(35);
+		CheckMode();
+		strongholdrejuvenated = CheckRejuvenatedServer();
+		
+		str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
+		
+		if(!LoadedBankCredits)
+		{
+			if(CheckServerBinary())
+			{
+				Log(s:"Detected public server cluster binary like tspg etc.");
+				CheckPublic = True;
 			}
-		} else {
-			if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()]) {
+			else
+			{
+				Log(s:"Detected stock binary.");
+				CheckPublic = False;
+			}
+			
+			for(int i = 0; i < 100; i++)
+			{
+				MPD2 = StrParam(s:MPD, d:i);
+				MapScores[i] = GetDBEntry("ServerProgress", MPD2);
+			}
+			
+			for(int i = 0; i < 5; i++)
+			{
+				SCD2 = StrParam(s:SCD, d:i);
+				str52code[i] = GetDBEntry("ServerProgress", SCD2);
+			}
+			
+			BankCredits = GetDBEntry("BankCredits", "ServerBankCredits");
+			str52codeinit = (bool)GetDBEntry("ServerProgress", "Str52CodeinitData");
+			STR50Open = (bool)GetDBEntry("ServerProgress", "Str50Data");
+			STR52Open = (bool)GetDBEntry("ServerProgress", "Str52Data");
+			STR54Open = (bool)GetDBEntry("ServerProgress", "Str54Data");
+			STR56Open = (bool)GetDBEntry("ServerProgress", "Str56Data");
+			FamiliarMapsOpen = (bool)GetDBEntry("ServerProgress", "FamiliarMapsData");
+			LoadedBankCredits = True;
+			
+			log(s:"Loaded Server Data");
+			Changelevel("MAP99", 0, 0, -1);
+			terminate;
+		}
+		BeginDBTransaction();
+		
+			for(int i = 0; i < 100; i++)
+			{
+				MPD2 = StrParam(s:MPD, d:i);
+				SetDBEntry("ServerProgress", MPD2, MapScores[i]);
+			}
+			
+			for(int i = 0; i < 5; i++)
+			{
+				SCD2 = StrParam(s:SCD, d:i);
+				SetDBEntry("ServerProgress", SCD2, str52code[i]);
+			}
+			
+			SetDBEntry("BankCredits", "ServerBankCredits", BankCredits);
+			SetDBEntry("ServerProgress", "Str52CodeinitData", (int)str52codeinit);
+			SetDBEntry("ServerProgress", "Str50Data", (int)STR50Open);
+			SetDBEntry("ServerProgress", "Str52Data", (int)STR52Open);
+			SetDBEntry("ServerProgress", "Str54Data", (int)STR54Open);
+			SetDBEntry("ServerProgress", "Str56Data", (int)STR56Open);
+			SetDBEntry("ServerProgress", "FamiliarMapsData", (int)FamiliarMapsOpen);
+			
+		EndDBTransaction();
+		log(s:"Saved Server Data");
+	}
+
+	Script "Check_Load" ENTER
+	{
+		CheckMode();
+		if(!PlayerIsLoggedIn(PlayerNumber()))
+		{
+			NoStartLoad[PlayerNumber()] = True;
+			terminate;
+		}
+		NoStartLoad[PlayerNumber()] = False;
+		
+		str PlayerName = GetPlayerAccountName(PlayerNumber());
+		
+		if(LoadedCredits[PlayerNumber()])
+			terminate;
+		
+		ACS_NamedExecuteAlways("Credits_Loading", 0, 0, 0, 0);
+	}
+
+	Script "Credits_Loading" NET 
+	{
+		CheckMode();
+		if(LoadedCredits[PlayerNumber()] || !PlayerIsLoggedIn(PlayerNumber()) || !PlayerInGame(PlayerNumber()) || !(bool)GetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber())))
+			terminate;
+		
+		int CacheCredits_A = GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), CacheCredits_B = CheckInventory("CoinItem");
+		
+		TakeInventory("CoinItem", 0x7FFFFFFF);
+		if(!strongholdrejuvenated)
+		{
+			if(!NoStartLoad[PlayerNumber()])
+			{
 				GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
-				GiveInventory("StrPaidInitialBankFee", 1);
 			}
-			if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()]) {
+			else
+			{
+				CacheCredits_B -= 300;
 				CacheCredits_B += CacheCredits_A;
 				GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
 			}
-			if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()]) {
-				GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
+		}
+		else
+		{	
+			if(!(bool)CheckInventory("StrPaidInitialBankFee"))
+			{
+				if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())))
+				{
+					if(!NoStartLoad[PlayerNumber()])
+					{
+						GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
+					}
+					else
+					{
+						CacheCredits_B -= StartingCredits < 800 ? 800 : StartingCredits;
+						CacheCredits_B += CacheCredits_A;
+						GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
+					}
+					GiveInventory("StrPaidInitialBankFee", 1);
+				}
+				else
+				{
+					if(!NoStartLoad[PlayerNumber()])
+					{
+						GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
+					}
+					else
+					{
+						CacheCredits_B -= StartingCredits < 800 ? 800 : StartingCredits;
+						CacheCredits_B += CacheCredits_A;
+						GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
+					}
+				}
 			}
-			if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()]) {
-				CacheCredits_B += CacheCredits_A;
-				GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
-				GiveInventory("StrPaidInitialBankFee", 1);
+			else
+			{
+				if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()])
+				{
+					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
+					GiveInventory("StrPaidInitialBankFee", 1);
+				}
+				if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()])
+				{
+					CacheCredits_B += CacheCredits_A;
+					GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
+				}
+				if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()])
+				{
+					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
+				}
+				if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()])
+				{
+					CacheCredits_B += CacheCredits_A;
+					GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
+					GiveInventory("StrPaidInitialBankFee", 1);
+				}
 			}
 		}
+		Print(s:"Restored your credits!");
+		log(s:"Loaded player", d:PlayerNumber(), s:"'s credits.");
+		LoadedCredits[PlayerNumber()] = True;
 	}
-	Print(s:"Restored your credits!");
-	log(s:"Loaded player", d:PlayerNumber(), s:"'s credits.");
-	LoadedCredits[PlayerNumber()] = True;
-}
 
-Script "Save_Process" (int pid, int unload, int save)
-{
-	int ptid;
-	str SaveAccountName;
-	int CacheCredit;
-	if(IsClientOnly())
-		terminate;
-	if(!(bool)unload && (bool)save) {
-		BeginDBTransaction();
-			if(PlayerIsLoggedIn(pid) && PlayerInGame(pid)) {
-				SaveAccountName = GetPlayerAccountName(pid);
-				CacheCredit = CheckInventory("CoinItem");
-				if(strongholdrejuvenated) {
-					if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckInventory("StrPaidInitialBankFee"))
-						SetDBEntry("Paidfee", SaveAccountName, 1);
-					else if(!LoadedCredits[pid] && (bool)GetDBEntry("HasAccount", SaveAccountName) && !(bool)CheckInventory("StrPaidInitialBankFee"))
-						CacheCredit -= StartingCredits < 800 ? 800 : StartingCredits;
-				} else if(!LoadedCredits[pid]) {
-					CacheCredit -= 300;
+	Script "Save_Process" (int pid, int unload, int save)
+	{
+		int ptid;
+		str SaveAccountName;
+		int CacheCredit;
+		
+		if(IsClientOnly())
+			terminate;
+			
+		if(!(bool)unload && (bool)save)
+		{
+			BeginDBTransaction();
+			
+				if(PlayerIsLoggedIn(pid) && PlayerInGame(pid))
+				{
+					SaveAccountName = GetPlayerAccountName(pid);
+					CacheCredit = CheckInventory("CoinItem");
+					if(strongholdrejuvenated)
+					{
+						if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckInventory("StrPaidInitialBankFee"))
+							SetDBEntry("Paidfee", SaveAccountName, 1);
+						else if(!LoadedCredits[pid] && (bool)GetDBEntry("HasAccount", SaveAccountName) && !(bool)CheckInventory("StrPaidInitialBankFee"))
+							CacheCredit -= StartingCredits < 800 ? 800 : StartingCredits;
+							
+					}
+					else if(!LoadedCredits[pid])
+					{
+						CacheCredit -= 300;
+					}
+					if(!(bool)GetDBEntry("HasAccount", SaveAccountName))
+					{
+						SetDBEntry("HasAccount", SaveAccountName, 1);
+						log(s:"Create player", d:pid, s:"'s account.");
+					}
+					else
+					{
+						if(!LoadedCredits[pid])
+							CacheCredit += GetDBEntry("Credits", SaveAccountName);
+					}
+					SetDBEntry("Credits", SaveAccountName, Clamp(CacheCredit, 0, 100000));
+					log(s:"Saved player", d:pid, s:"'s credits.");
+					LoadedCredits[pid] = False;
+					NoStartLoad[pid] = False;
 				}
-				if(!(bool)GetDBEntry("HasAccount", SaveAccountName)) {
-					SetDBEntry("HasAccount", SaveAccountName, 1);
-					log(s:"Create player", d:pid, s:"'s account.");
-				} else {
-					if(!LoadedCredits[pid])
-						CacheCredit += GetDBEntry("Credits", SaveAccountName);
+				
+			EndDBTransaction();
+			ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
+		}
+		else if((bool)unload && !(bool)save)
+		{
+			BeginDBTransaction();
+			
+				for(int i = 0; i < MAXPLAYERS; i++)
+				{
+					ptid = PLAYERS_TID + i;
+					if(!PlayerInGame(i) || !PlayerIsLoggedIn(i))
+						continue;
+						
+					SaveAccountName = GetPlayerAccountName(i);
+					CacheCredit = CheckActorInventory(ptid, "CoinItem");
+					if(strongholdrejuvenated)
+					{
+						if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckActorInventory(ptid, "StrPaidInitialBankFee"))
+							SetDBEntry("Paidfee", SaveAccountName, 1);
+						else if(!LoadedCredits[i] && (bool)GetDBEntry("HasAccount", SaveAccountName) && !(bool)CheckActorInventory(ptid, "StrPaidInitialBankFee"))
+							CacheCredit -= StartingCredits < 800 ? 800 : StartingCredits;
+							
+					}
+					else if(!LoadedCredits[i])
+					{
+						CacheCredit -= 300;
+					}
+					if(!(bool)GetDBEntry("HasAccount", SaveAccountName))
+					{
+						SetDBEntry("HasAccount", SaveAccountName, 1);
+						log(s:"Create player", d:pid, s:"'s account.");
+					}
+					else
+					{
+						if(!LoadedCredits[i])
+							CacheCredit += GetDBEntry("Credits", SaveAccountName);
+					}
+					SetDBEntry("Credits", SaveAccountName, Clamp(CacheCredit, 0, 100000));
+					log(s:"Saved player", d:pid, s:"'s credits.");
+					LoadedCredits[pid] = True;
+					TakeActorInventory(pid, "CoinItem", 0x7FFFFFFF);
+					GiveActorInventory(pid, "CoinItem", Clamp(CacheCredit, 0, 100000));
 				}
-				SetDBEntry("Credits", SaveAccountName, Clamp(CacheCredit, 0, 100000));
-				log(s:"Saved player", d:pid, s:"'s credits.");
-				LoadedCredits[pid] = False;
-				NoStartLoad[pid] = False;
-			}
-		EndDBTransaction();
-		ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
-	} else if((bool)unload && !(bool)save) {
-		BeginDBTransaction();
-			for (int i = 0; i < MAXPLAYERS; i++) {
-				ptid = PLAYERS_TID + i;
-				if(!PlayerInGame(i) || !PlayerIsLoggedIn(i))
-					continue;
-				SaveAccountName = GetPlayerAccountName(i);
-				CacheCredit = CheckActorInventory(ptid, "CoinItem");
-				if(strongholdrejuvenated) {
-					if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckActorInventory(ptid, "StrPaidInitialBankFee"))
-						SetDBEntry("Paidfee", SaveAccountName, 1);
-					else if(!LoadedCredits[i] && (bool)GetDBEntry("HasAccount", SaveAccountName) && !(bool)CheckActorInventory(ptid, "StrPaidInitialBankFee"))
-						CacheCredit -= StartingCredits < 800 ? 800 : StartingCredits;
-				} else if(!LoadedCredits[i]) {
-					CacheCredit -= 300;
-				}
-				if(!(bool)GetDBEntry("HasAccount", SaveAccountName)) {
-					SetDBEntry("HasAccount", SaveAccountName, 1);
-					log(s:"Create player", d:pid, s:"'s account.");
-				} else {
-					if(!LoadedCredits[i])
-						CacheCredit += GetDBEntry("Credits", SaveAccountName);
-				}
-				SetDBEntry("Credits", SaveAccountName, Clamp(CacheCredit, 0, 100000));
-				log(s:"Saved player", d:pid, s:"'s credits.");
-				LoadedCredits[pid] = True;
-				TakeActorInventory(pid, "CoinItem", 0x7FFFFFFF);
-				GiveActorInventory(pid, "CoinItem", Clamp(CacheCredit, 0, 100000));
-			}
-		EndDBTransaction();
-	} else {
-		ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
+				
+			EndDBTransaction();
+		}
+		else
+		{
+			ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
+		}
 	}
-}
 
-Script "Server_Seve" UNLOADING
-{
-	CheckMode();
-	ACS_NamedExecuteAlways("Save_Process", 0, 0, 1, 0);
-}
+	Script "Server_Seve" UNLOADING
+	{
+		CheckMode();
+		ACS_NamedExecuteAlways("Save_Process", 0, 0, 1, 0);
+	}
 
-Script "Client_Disconnect" (int pid) CLIENTSIDE
-{
-	if(pid == ConsolePlayerNumber()) {
+	Script "Client_Disconnect" (int pid) CLIENTSIDE
+	{
+		if(pid == ConsolePlayerNumber())
+		{
+			LoadedCredits[pid] = False;
+			NoStartLoad[pid] = False;
+			Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
+			ConsoleCommand("Disconnect");
+		}
+	}
+
+	Script "Client_Disconnect2" (int pid) DISCONNECT
+	{
 		LoadedCredits[pid] = False;
 		NoStartLoad[pid] = False;
-		Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
-		ConsoleCommand("Disconnect");
 	}
-}
 
-Script "Client_Disconnect2" (int pid) DISCONNECT
-{
-	LoadedCredits[pid] = False;
-	NoStartLoad[pid] = False;
-}
+	Script "Player_Quit" (int save) NET
+	{
+		CheckMode();
+		int pid = PlayerNumber();
+		ACS_NamedExecuteAlways("Save_Process", 0, pid, 0, save);
+	}
 
-Script "Player_Quit" (int save) NET
-{
-	CheckMode();
-	int pid = PlayerNumber();
-	ACS_NamedExecuteAlways("Save_Process", 0, pid, 0, save);
-}
+	Script "Show_Credits" NET
+	{
+		CheckMode();
+		str pf = (bool)CheckInventory("StrPaidInitialBankFee") ? "True" : "False";
+		str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) ? "True" : "False";
+		Print(s:"Paid fee: ", s:pf, s:"\n", s:"Database paid fee: ", s:dpf, s:"\n", s:"Your credits: ", d:CheckInventory("CoinItem"), s:"\n",s:"Your database credits: ", d:GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), s:"\n", s:"Bank credits: ", d:BankCredits, s:"\n", s:"Bank database credits: ", d:GetDBEntry("BankCredits", "ServerBankCredits"));
+	}
 
-Script "Show_Credits" NET
-{
-	CheckMode();
-	str pf = (bool)CheckInventory("StrPaidInitialBankFee") ? "True" : "False";
-	str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) ? "True" : "False";
-	Print(s:"Paid fee: ", s:pf, s:"\n", s:"Database paid fee: ", s:dpf, s:"\n", s:"Your credits: ", d:CheckInventory("CoinItem"), s:"\n",s:"Your database credits: ", d:GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), s:"\n", s:"Bank credits: ", d:BankCredits, s:"\n", s:"Bank database credits: ", d:GetDBEntry("BankCredits", "ServerBankCredits"));
-}
-
-Script "Clear_Credits" NET
-{
-	CheckMode();
-	if(!PlayerIsLoggedIn(PlayerNumber()))
-		terminate;
-	BeginDBTransaction();
-		SetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber()), 0);
-		SetDBEntry("Credits", GetPlayerAccountName(PlayerNumber()), 0);
-		SetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()), 0);
-	EndDBTransaction();
-	TakeInventory("StrPaidInitialBankFee", 0x7FFFFFFF);
-	NoStartLoad[PlayerNumber()] = True;
-	if (StartingCredits < 800)
-		GiveInventory("CoinItem", 800);
-	else
-		GiveInventory("CoinItem", StartingCredits);
-}
-
-Script "Remove_ServerData" (int Progress)// Use pukename
-{
-	CheckMode();
-	if(!Progress) {
-		SetDBEntry("BankCredits", "ServerBankCredits", 0);
-		Log(s:"The server money data has been deleted.");
-	} else {
+	Script "Clear_Credits" NET
+	{
+		CheckMode();
+		if(!PlayerIsLoggedIn(PlayerNumber()))
+			terminate;
+			
 		BeginDBTransaction();
-			int i = 0;
-			str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
-			for (i = 0; i < 100; i++) {
-				MPD2 = StrParam(s:MPD, d:i);
-				SetDBEntry("ServerProgress", MPD2, 0);
-				MapScores[i] = 0;
-			}
-			for (i = 0; i < 5; i++) {
-				SCD2 = StrParam(s:SCD, d:i);
-				SetDBEntry("ServerProgress", SCD2, 0);
-				str52code[i] = 0;
-			}
-			SetDBEntry("ServerProgress", "Str52CodeinitData", 0);
-			SetDBEntry("ServerProgress", "Str50Data", 0);
-			SetDBEntry("ServerProgress", "Str52Data", 0);
-			SetDBEntry("ServerProgress", "Str54Data", 0);
-			SetDBEntry("ServerProgress", "Str56Data", 0);
-			SetDBEntry("ServerProgress", "FamiliarMapsData", 0);
-			Log(s:"The server progress data has been deleted.");
+		
+			SetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber()), 0);
+			SetDBEntry("Credits", GetPlayerAccountName(PlayerNumber()), 0);
+			SetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()), 0);
+		
 		EndDBTransaction();
+		TakeInventory("StrPaidInitialBankFee", 0x7FFFFFFF);
+		NoStartLoad[PlayerNumber()] = True;
+		
+		if(StartingCredits < 800)
+			GiveInventory("CoinItem", 800);
+		else
+			GiveInventory("CoinItem", StartingCredits);
 	}
-	Changelevel("MAP99", 0, 0, -1);
-}
 
-Script "Give_Permission" (int pid, int del)
-{
-	CheckMode();
-	if(!PlayerIsLoggedIn(pid))
-		terminate;
-	if(!del) {
-		SetDBEntry("Admin", GetPlayerAccountName(pid), 1);
-		Log(s:"Gave admin permisson to ", n:pid, s:".");
-	} else {
-		SetDBEntry("Admin", GetPlayerAccountName(pid), 0);
-		Log(s:"Revoked ", n:pid, s:"'s admin permisson.");
-	}
-}
-
-Script "Admin_SeeMoney" NET
-{
-	CheckMode();
-	if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
-		terminate;
-	int who = GetUserCVar(PlayerNumber(), "admin_who");
-	int ptid = PLAYERS_TID + who;
-	str pf = (bool)CheckActorInventory(ptid, "StrPaidInitialBankFee") ? "True" : "False";
-	str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(who)) ? "True" : "False";
-	Print(s:"Paid fee: ", s:pf, s:"\n", s:"Database paid fee: ", s:dpf, s:"\n", n:who, s:"'s credits: ", d:CheckActorInventory(ptid, "CoinItem"), s:"\n", n:who, s:"'s database credits: ", d:GetDBEntry("Credits", GetPlayerAccountName(who))); 
-}
-
-Script "Admin_AddBank" NET
-{
-	CheckMode();
-	if(CheckPublic) {
-		Log(s:"Not allowed on this server");
-		terminate;
-	}
-	if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
-		terminate;
-	int amount = GetUserCVar(PlayerNumber(), "admin_amount");
-	int silent = GetUserCVar(PlayerNumber(), "admin_silent");
-	str reason = GetUserCVarString(PlayerNumber(), "admin_reason");
-	if(!(bool)silent) {
-		BankCredits += amount;
-		Delay(1);
-		PrintBold(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-	} else {
-		BankCredits += amount;
-		Delay(1);
-		Print(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-	}
-}
-
-Script "Admin_ReduceBank" NET
-{
-	CheckMode();
-	if(CheckPublic) {
-		Log(s:"Not allowed on this server");
-		terminate;
-	}
-	if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
-		terminate;
-	int amount = GetUserCVar(PlayerNumber(), "admin_amount");
-	int silent = GetUserCVar(PlayerNumber(), "admin_silent");
-	str reason = GetUserCVarString(PlayerNumber(), "admin_reason");
-	if(!(bool)silent) {
-		BankCredits -= amount;
-		Delay(1);
-		PrintBold(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-	} else {
-		BankCredits -= amount;
-		Delay(1);
-		Print(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
-	}
-}
-
-Script "Admin_AddMoney" NET
-{
-	CheckMode();
-	if(CheckPublic) {
-		Log(s:"Not allowed on this server");
-		terminate;
-	}
-	int pid = PlayerNumber();
-	int amount = GetUserCVar(pid, "admin_amount");
-	int silent = GetUserCVar(pid, "admin_silent");
-	int who = GetUserCVar(pid, "admin_who");
-	str reason = GetUserCVarString(pid, "admin_reason");
-	if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
-		terminate;
-	if(!(bool)silent) {
-		GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
-		Delay(1);
-		PrintBold(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-	} else { 
-		GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
-		Delay(1);
-		Print(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-		SetActivatorToPlayer2(who);
-		Print(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-	}
-}
-
-Script "Admin_ReduceMoney" NET
-{
-	CheckMode();
-	if(CheckPublic) {
-		Log(s:"Not allowed on this server");
-		terminate;
-	}
-	int pid = PlayerNumber();
-	int amount = GetUserCVar(pid, "admin_amount");
-	int silent = GetUserCVar(pid, "admin_silent");
-	int who = GetUserCVar(pid, "admin_who");
-	str reason = GetUserCVarString(pid, "admin_reason");
-	if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
-		terminate;
-	if(!(bool)silent) {
-		TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
-		Delay(1);
-		PrintBold(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-	} else {
-		TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
-		Delay(1);
-		Print(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-		Log(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-		SetActivatorToPlayer2(who);
-		Print(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
-	}
-}
-
-Script "Display_Progress" (int MAPNo) NET
-{
-	if(MAPNo == 51 || MAPNo == 53 || MAPNo == 55 || MAPNo >= 57) {
-		ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
-		terminate;
-	}
-	if(MAPNo >= 36 && MAPNo <= 39) {
-		ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
-		terminate;
-	}
-	if(MAPNo >= 45 && MAPNo <= 49) {
-		ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
-		terminate;
-	}
-	If(MAPNo != 0) {
-		if(MapScores[MAPNo] == -1 || MapScores[MAPNo] >= 1) {
-			ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 1, 0);
-		} else {
-			ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 0, 0);
+	Script "Remove_ServerData" (int Progress)// Use pukename
+	{
+		CheckMode();
+		if(!Progress)
+		{
+			SetDBEntry("BankCredits", "ServerBankCredits", 0);
+			Log(s:"The server money data has been deleted.");
 		}
-	} else {
-		for (int i = 100; i > 0; i--) {
-			if(i == 0 || i == 51 || i == 53 || i == 55 || i >= 57)
-				continue;
-			if(i >= 36 && i <= 39)
-				continue;
-			if(i >= 45 && i <= 49)
-				continue;
-			if(MapScores[i] == -1 || MapScores[i] >= 1) {
-				ACS_NamedExecuteAlways("Output_Client", 0, i, 1, 0);
-			} else {
-				ACS_NamedExecuteAlways("Output_Client", 0, i, 0, 0);
+		else
+		{
+			BeginDBTransaction();
+			
+				str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
+				for(int i = 0; i < 100; i++)
+				{
+					MPD2 = StrParam(s:MPD, d:i);
+					SetDBEntry("ServerProgress", MPD2, 0);
+					MapScores[i] = 0;
+				}
+				
+				for(int i = 0; i < 5; i++)
+				{
+					SCD2 = StrParam(s:SCD, d:i);
+					SetDBEntry("ServerProgress", SCD2, 0);
+					str52code[i] = 0;
+				}
+				
+				SetDBEntry("ServerProgress", "Str52CodeinitData", 0);
+				SetDBEntry("ServerProgress", "Str50Data", 0);
+				SetDBEntry("ServerProgress", "Str52Data", 0);
+				SetDBEntry("ServerProgress", "Str54Data", 0);
+				SetDBEntry("ServerProgress", "Str56Data", 0);
+				SetDBEntry("ServerProgress", "FamiliarMapsData", 0);
+				Log(s:"The server progress data has been deleted.");
+				
+			EndDBTransaction();
+		}
+		Changelevel("MAP99", 0, 0, -1);
+	}
+
+	Script "Give_Permission" (int pid, int del)
+	{
+		CheckMode();
+		if(!PlayerIsLoggedIn(pid))
+			terminate;
+			
+		if(!del)
+		{
+			SetDBEntry("Admin", GetPlayerAccountName(pid), 1);
+			Log(s:"Gave admin permisson to ", n:pid, s:".");
+		}
+		else
+		{
+			SetDBEntry("Admin", GetPlayerAccountName(pid), 0);
+			Log(s:"Revoked ", n:pid, s:"'s admin permisson.");
+		}
+	}
+
+	Script "Admin_SeeMoney" NET
+	{
+		CheckMode();
+		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
+			terminate;
+			
+		int who = GetUserCVar(PlayerNumber(), "admin_who");
+		int ptid = PLAYERS_TID + who;
+		str pf = (bool)CheckActorInventory(ptid, "StrPaidInitialBankFee") ? "True" : "False";
+		str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(who)) ? "True" : "False";
+		
+		Print(s:"Paid fee: ", s:pf, s:"\n", s:"Database paid fee: ", s:dpf, s:"\n", n:who, s:"'s credits: ", d:CheckActorInventory(ptid, "CoinItem"), s:"\n", n:who, s:"'s database credits: ", d:GetDBEntry("Credits", GetPlayerAccountName(who))); 
+	}
+
+	Script "Admin_AddBank" NET
+	{
+		CheckMode();
+		if(CheckPublic)
+		{
+			Log(s:"Not allowed on this server");
+			terminate;
+		}
+		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
+			terminate;
+			
+		int amount = GetUserCVar(PlayerNumber(), "admin_amount");
+		int silent = GetUserCVar(PlayerNumber(), "admin_silent");
+		str reason = GetUserCVarString(PlayerNumber(), "admin_reason");
+		
+		if(StrCmp(reason, "" ) == 0)
+			reason = "Not given";
+			
+		if(!(bool)silent)
+		{
+			BankCredits += amount;
+			Delay(1);
+			PrintBold(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+		else
+		{
+			BankCredits += amount;
+			Delay(1);
+			Print(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Added ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+	}
+
+	Script "Admin_ReduceBank" NET
+	{
+		CheckMode();
+		if(CheckPublic)
+		{
+			Log(s:"Not allowed on this server");
+			terminate;
+		}
+		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
+			terminate;
+			
+		int amount = GetUserCVar(PlayerNumber(), "admin_amount");
+		int silent = GetUserCVar(PlayerNumber(), "admin_silent");
+		str reason = GetUserCVarString(PlayerNumber(), "admin_reason");
+		
+		if(StrCmp(reason, "" ) == 0)
+			reason = "Not given";
+			
+		if(!(bool)silent)
+		{
+			BankCredits -= amount;
+			Delay(1);
+			PrintBold(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+		else
+		{
+			BankCredits -= amount;
+			Delay(1);
+			Print(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+	}
+
+	Script "Admin_AddMoney" NET
+	{
+		CheckMode();
+		if(CheckPublic)
+		{
+			Log(s:"Not allowed on this server");
+			terminate;
+		}
+		
+		int pid = PlayerNumber();
+		int amount = GetUserCVar(pid, "admin_amount");
+		int silent = GetUserCVar(pid, "admin_silent");
+		int who = GetUserCVar(pid, "admin_who");
+		str reason = GetUserCVarString(pid, "admin_reason");
+		
+		if(StrCmp(reason, "" ) == 0)
+			reason = "Not given";
+			
+		if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
+			terminate;
+			
+		if(!(bool)silent)
+		{
+			GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			Delay(1);
+			PrintBold(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+		else
+		{ 
+			GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			Delay(1);
+			Print(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			SetActivatorToPlayer2(who);
+			Print(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+	}
+
+	Script "Admin_ReduceMoney" NET
+	{
+		CheckMode();
+		if(CheckPublic)
+		{
+			Log(s:"Not allowed on this server");
+			terminate;
+		}
+		
+		int pid = PlayerNumber();
+		int amount = GetUserCVar(pid, "admin_amount");
+		int silent = GetUserCVar(pid, "admin_silent");
+		int who = GetUserCVar(pid, "admin_who");
+		str reason = GetUserCVarString(pid, "admin_reason");
+		
+		if(StrCmp(reason, "" ) == 0)
+			reason = "Not given";
+			
+		if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
+			terminate;
+			
+		if(!(bool)silent)
+		{
+			TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			Delay(1);
+			PrintBold(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+		else
+		{
+			TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			Delay(1);
+			Print(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			Log(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			SetActivatorToPlayer2(who);
+			Print(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+		}
+	}
+
+	Script "Display_Progress" (int MAPNo) NET
+	{
+		if(GetUserCVar(PlayerNumber(), "ssc_number") != 0)
+		{
+			MAPNo = GetUserCVar(PlayerNumber(), "ssc_number");
+			SetUserCVar(PlayerNumber(), "ssc_number", 0);
+		}
+		if(MAPNo == 51 || MAPNo == 53 || MAPNo == 55 || MAPNo >= 57)
+		{
+			ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
+			terminate;
+		}
+		if(MAPNo >= 36 && MAPNo <= 39)
+		{
+			ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
+			terminate;
+		}
+		if(MAPNo >= 45 && MAPNo <= 49)
+		{
+			ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
+			terminate;
+		}
+		If(MAPNo != 0)
+		{
+			if(MapScores[MAPNo] == -1 || MapScores[MAPNo] >= 1)
+			{
+				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 1, 0);
+			}
+			else
+			{
+				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 0, 0);
+			}
+		}
+		else
+		{
+			for(int i = 100; i > 0; i--)
+			{
+				if(i == 0 || i == 51 || i == 53 || i == 55 || i >= 57)
+					continue;
+				if(i >= 36 && i <= 39)
+					continue;
+				if(i >= 45 && i <= 49)
+					continue;
+				if(MapScores[i] == -1 || MapScores[i] >= 1) {
+					ACS_NamedExecuteAlways("Output_Client", 0, i, 1, 0);
+				}
+				else
+				{
+					ACS_NamedExecuteAlways("Output_Client", 0, i, 0, 0);
+				}
 			}
 		}
 	}
-}
 
-Script "Output_Client" (int i, int j) CLIENTSIDE
-{
-	if(j == 1)
-		Log(s: i < 10 ? "STR0" : "STR", d:i, s:" ", s:"Cleared");
-	else if(j == 0)
-		Log(s: i < 10 ? "STR0" : "STR", d:i, s:" ", s:"Not cleared");
-	else
-		Log(s:"No data");
+	Script "Output_Client" (int i, int j) CLIENTSIDE
+	{
+		if(j == 1)
+			Log(s: i < 10 ? "STR0" : "STR", d:i, s:" ", s:"Cleared");
+		else if(j == 0)
+			Log(s: i < 10 ? "STR0" : "STR", d:i, s:" ", s:"Not cleared");
+		else
+			Log(s:"No data");
+	}
 }
