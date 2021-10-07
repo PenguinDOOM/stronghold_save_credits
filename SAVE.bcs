@@ -52,8 +52,10 @@ ACSUtils uses code from ACS-X:
 
 
 #library "SAVE"
+
 #include "zcommon.h"
 #include "bcsutils.bcs"
+
 #define MAXPLAYERS 64
 #define PLAYERS_TID 5000
 #define GAME_NET_TEAMGAME 4
@@ -69,11 +71,11 @@ global bool 55:STR54Open;
 global bool 56:STR56Open;
 global bool 57:FamiliarMapsOpen;
 
-//I don't want to use global variables, but cvar breaks the script because it is modifiable.
-// global bool 12:EnableMods;
+ // I don't want to use global variables, but cvar breaks the script because it is modifiable.
+ // global bool 12:EnableMods;
 global bool 13:LoadedBankCredits;
 global bool 14:LoadedCredits[MAXPLAYERS];
-// global bool 15:LockedSave[MAXPLAYERS];
+ // global bool 15:LockedSave[MAXPLAYERS];
 global bool 16:CheckPublic;
 global bool 18:NoStartLoad[MAXPLAYERS];
 
@@ -88,9 +90,9 @@ strict namespace ssc
 	{
 		if(IsServerOnly())
 		{
-			if(GetCVar("tspg_badwordsenabled"))// Check TSPG
+			if(GetCVar("tspg_badwordsenabled")) // Check TSPG
 				return true;
-			else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false"))// Check DUD
+			else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false")) // Check DUD
 				return true;
 			else
 				return false;
@@ -135,6 +137,7 @@ strict namespace ssc
 	void CheckMode()
 	{
 		bool EnableMods;
+		
 		switch(GameType())
 		{
 			case GAME_NET_COOPERATIVE:
@@ -156,7 +159,9 @@ strict namespace ssc
 	Script "Server_Start" OPEN
 	{
 		Delay(35);
+		
 		CheckMode();
+		
 		strongholdrejuvenated = CheckRejuvenatedServer();
 		
 		str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
@@ -166,11 +171,13 @@ strict namespace ssc
 			if(CheckServerBinary())
 			{
 				Log(s:"Detected public server cluster binary like tspg etc.");
+				
 				CheckPublic = True;
 			}
 			else
 			{
 				Log(s:"Detected stock binary.");
+				
 				CheckPublic = False;
 			}
 			
@@ -197,19 +204,23 @@ strict namespace ssc
 			
 			log(s:"Loaded Server Data");
 			Changelevel("MAP99", 0, 0, -1);
+			
 			terminate;
 		}
+		
 		BeginDBTransaction();
 		
 			for(int i = 0; i < 100; i++)
 			{
 				MPD2 = StrParam(s:MPD, d:i);
+				
 				SetDBEntry("ServerProgress", MPD2, MapScores[i]);
 			}
 			
 			for(int i = 0; i < 5; i++)
 			{
 				SCD2 = StrParam(s:SCD, d:i);
+				
 				SetDBEntry("ServerProgress", SCD2, str52code[i]);
 			}
 			
@@ -222,17 +233,21 @@ strict namespace ssc
 			SetDBEntry("ServerProgress", "FamiliarMapsData", (int)FamiliarMapsOpen);
 			
 		EndDBTransaction();
+		
 		log(s:"Saved Server Data");
 	}
 
 	Script "Check_Load" ENTER
 	{
 		CheckMode();
+		
 		if(!PlayerIsLoggedIn(PlayerNumber()))
 		{
 			NoStartLoad[PlayerNumber()] = True;
+			
 			terminate;
 		}
+		
 		NoStartLoad[PlayerNumber()] = False;
 		
 		str PlayerName = GetPlayerAccountName(PlayerNumber());
@@ -246,12 +261,14 @@ strict namespace ssc
 	Script "Credits_Loading" NET 
 	{
 		CheckMode();
+		
 		if(LoadedCredits[PlayerNumber()] || !PlayerIsLoggedIn(PlayerNumber()) || !PlayerInGame(PlayerNumber()) || !(bool)GetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber())))
 			terminate;
 		
 		int CacheCredits_A = GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), CacheCredits_B = CheckInventory("CoinItem");
 		
 		TakeInventory("CoinItem", 0x7FFFFFFF);
+		
 		if(!strongholdrejuvenated)
 		{
 			if(!NoStartLoad[PlayerNumber()])
@@ -262,6 +279,7 @@ strict namespace ssc
 			{
 				CacheCredits_B -= 300;
 				CacheCredits_B += CacheCredits_A;
+				
 				GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
 			}
 		}
@@ -279,6 +297,7 @@ strict namespace ssc
 					{
 						CacheCredits_B -= StartingCredits < 800 ? 800 : StartingCredits;
 						CacheCredits_B += CacheCredits_A;
+						
 						GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
 					}
 					GiveInventory("StrPaidInitialBankFee", 1);
@@ -293,6 +312,7 @@ strict namespace ssc
 					{
 						CacheCredits_B -= StartingCredits < 800 ? 800 : StartingCredits;
 						CacheCredits_B += CacheCredits_A;
+						
 						GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
 					}
 				}
@@ -304,25 +324,29 @@ strict namespace ssc
 					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
 					GiveInventory("StrPaidInitialBankFee", 1);
 				}
-				if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()])
+				else if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()])
 				{
 					CacheCredits_B += CacheCredits_A;
+					
 					GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
 				}
-				if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()])
+				else if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()])
 				{
 					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
 				}
-				if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()])
+				else
 				{
 					CacheCredits_B += CacheCredits_A;
+					
 					GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
 					GiveInventory("StrPaidInitialBankFee", 1);
 				}
 			}
 		}
+		
 		Print(s:"Restored your credits!");
 		log(s:"Loaded player", d:PlayerNumber(), s:"'s credits.");
+		
 		LoadedCredits[PlayerNumber()] = True;
 	}
 
@@ -343,6 +367,7 @@ strict namespace ssc
 				{
 					SaveAccountName = GetPlayerAccountName(pid);
 					CacheCredit = CheckInventory("CoinItem");
+					
 					if(strongholdrejuvenated)
 					{
 						if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckInventory("StrPaidInitialBankFee"))
@@ -367,11 +392,13 @@ strict namespace ssc
 					}
 					SetDBEntry("Credits", SaveAccountName, Clamp(CacheCredit, 0, 100000));
 					log(s:"Saved player", d:pid, s:"'s credits.");
+					
 					LoadedCredits[pid] = False;
 					NoStartLoad[pid] = False;
 				}
 				
 			EndDBTransaction();
+			
 			ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
 		}
 		else if((bool)unload && !(bool)save)
@@ -381,11 +408,13 @@ strict namespace ssc
 				for(int i = 0; i < MAXPLAYERS; i++)
 				{
 					ptid = PLAYERS_TID + i;
+					
 					if(!PlayerInGame(i) || !PlayerIsLoggedIn(i))
 						continue;
 						
 					SaveAccountName = GetPlayerAccountName(i);
 					CacheCredit = CheckActorInventory(ptid, "CoinItem");
+					
 					if(strongholdrejuvenated)
 					{
 						if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckActorInventory(ptid, "StrPaidInitialBankFee"))
@@ -410,7 +439,9 @@ strict namespace ssc
 					}
 					SetDBEntry("Credits", SaveAccountName, Clamp(CacheCredit, 0, 100000));
 					log(s:"Saved player", d:pid, s:"'s credits.");
+					
 					LoadedCredits[pid] = True;
+					
 					TakeActorInventory(pid, "CoinItem", 0x7FFFFFFF);
 					GiveActorInventory(pid, "CoinItem", Clamp(CacheCredit, 0, 100000));
 				}
@@ -426,6 +457,7 @@ strict namespace ssc
 	Script "Server_Seve" UNLOADING
 	{
 		CheckMode();
+		
 		ACS_NamedExecuteAlways("Save_Process", 0, 0, 1, 0);
 	}
 
@@ -435,6 +467,7 @@ strict namespace ssc
 		{
 			LoadedCredits[pid] = False;
 			NoStartLoad[pid] = False;
+			
 			Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
 			ConsoleCommand("Disconnect");
 		}
@@ -449,21 +482,26 @@ strict namespace ssc
 	Script "Player_Quit" (int save) NET
 	{
 		CheckMode();
+		
 		int pid = PlayerNumber();
+		
 		ACS_NamedExecuteAlways("Save_Process", 0, pid, 0, save);
 	}
 
 	Script "Show_Credits" NET
 	{
 		CheckMode();
+		
 		str pf = (bool)CheckInventory("StrPaidInitialBankFee") ? "True" : "False";
 		str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) ? "True" : "False";
+		
 		Print(s:"Paid fee: ", s:pf, s:"\n", s:"Database paid fee: ", s:dpf, s:"\n", s:"Your credits: ", d:CheckInventory("CoinItem"), s:"\n",s:"Your database credits: ", d:GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), s:"\n", s:"Bank credits: ", d:BankCredits, s:"\n", s:"Bank database credits: ", d:GetDBEntry("BankCredits", "ServerBankCredits"));
 	}
 
 	Script "Clear_Credits" NET
 	{
 		CheckMode();
+		
 		if(!PlayerIsLoggedIn(PlayerNumber()))
 			terminate;
 			
@@ -474,7 +512,9 @@ strict namespace ssc
 			SetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()), 0);
 		
 		EndDBTransaction();
+		
 		TakeInventory("StrPaidInitialBankFee", 0x7FFFFFFF);
+		
 		NoStartLoad[PlayerNumber()] = True;
 		
 		if(StartingCredits < 800)
@@ -486,6 +526,7 @@ strict namespace ssc
 	Script "Remove_ServerData" (int Progress)// Use pukename
 	{
 		CheckMode();
+		
 		if(!Progress)
 		{
 			SetDBEntry("BankCredits", "ServerBankCredits", 0);
@@ -520,12 +561,14 @@ strict namespace ssc
 				
 			EndDBTransaction();
 		}
+		
 		Changelevel("MAP99", 0, 0, -1);
 	}
 
 	Script "Give_Permission" (int pid, int del)
 	{
 		CheckMode();
+		
 		if(!PlayerIsLoggedIn(pid))
 			terminate;
 			
@@ -544,6 +587,7 @@ strict namespace ssc
 	Script "Admin_SeeMoney" NET
 	{
 		CheckMode();
+		
 		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
 			terminate;
 			
@@ -558,11 +602,13 @@ strict namespace ssc
 	Script "Admin_AddBank" NET
 	{
 		CheckMode();
+		
 		if(CheckPublic)
 		{
 			Log(s:"Not allowed on this server");
 			terminate;
 		}
+		
 		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
 			terminate;
 			
@@ -592,11 +638,13 @@ strict namespace ssc
 	Script "Admin_ReduceBank" NET
 	{
 		CheckMode();
+		
 		if(CheckPublic)
 		{
 			Log(s:"Not allowed on this server");
 			terminate;
 		}
+		
 		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
 			terminate;
 			
@@ -610,14 +658,18 @@ strict namespace ssc
 		if(!(bool)silent)
 		{
 			BankCredits -= amount;
+			
 			Delay(1);
+			
 			PrintBold(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
 			Log(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
 		}
 		else
 		{
 			BankCredits -= amount;
+			
 			Delay(1);
+			
 			Print(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
 			Log(s:"Reduced ", d:amount, s:" credits to the bank by admin (", n:PlayerNumber(), s:")", s:"\n", s:"Reason: ", s:reason);
 		}
@@ -626,6 +678,7 @@ strict namespace ssc
 	Script "Admin_AddMoney" NET
 	{
 		CheckMode();
+		
 		if(CheckPublic)
 		{
 			Log(s:"Not allowed on this server");
@@ -647,17 +700,23 @@ strict namespace ssc
 		if(!(bool)silent)
 		{
 			GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			
 			Delay(1);
+			
 			PrintBold(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 			Log(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 		}
 		else
 		{ 
 			GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			
 			Delay(1);
+			
 			Print(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 			Log(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			
 			SetActivatorToPlayer2(who);
+			
 			Print(s:"Added ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 		}
 	}
@@ -665,6 +724,7 @@ strict namespace ssc
 	Script "Admin_ReduceMoney" NET
 	{
 		CheckMode();
+		
 		if(CheckPublic)
 		{
 			Log(s:"Not allowed on this server");
@@ -686,17 +746,23 @@ strict namespace ssc
 		if(!(bool)silent)
 		{
 			TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			
 			Delay(1);
+			
 			PrintBold(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 			Log(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 		}
 		else
 		{
 			TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
+			
 			Delay(1);
+			
 			Print(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 			Log(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
+			
 			SetActivatorToPlayer2(who);
+			
 			Print(s:"Reduced ", d:amount, s:" credits to ", n:who, s:" by admin (", n:pid, s:")", s:"\n", s:"Reason: ", s:reason);
 		}
 	}
@@ -708,31 +774,27 @@ strict namespace ssc
 			MAPNo = GetUserCVar(PlayerNumber(), "ssc_number");
 			SetUserCVar(PlayerNumber(), "ssc_number", 0);
 		}
-		if(MAPNo == 51 || MAPNo == 53 || MAPNo == 55 || MAPNo >= 57)
+		else if(MAPNo == 51 || MAPNo == 53 || MAPNo == 55 || MAPNo >= 57)
 		{
 			ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
 			terminate;
 		}
-		if(MAPNo >= 36 && MAPNo <= 39)
+		else if(MAPNo >= 36 && MAPNo <= 39)
 		{
 			ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
 			terminate;
 		}
-		if(MAPNo >= 45 && MAPNo <= 49)
+		else if(MAPNo >= 45 && MAPNo <= 49)
 		{
 			ACS_NamedExecuteAlways("Output_Client", 0, 0, -1, 0);
 			terminate;
 		}
-		If(MAPNo != 0)
+		else If(MAPNo != 0)
 		{
 			if(MapScores[MAPNo] == -1 || MapScores[MAPNo] >= 1)
-			{
 				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 1, 0);
-			}
 			else
-			{
 				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 0, 0);
-			}
 		}
 		else
 		{
@@ -740,17 +802,14 @@ strict namespace ssc
 			{
 				if(i == 0 || i == 51 || i == 53 || i == 55 || i >= 57)
 					continue;
-				if(i >= 36 && i <= 39)
+				else if(i >= 36 && i <= 39)
 					continue;
-				if(i >= 45 && i <= 49)
+				else if(i >= 45 && i <= 49)
 					continue;
-				if(MapScores[i] == -1 || MapScores[i] >= 1) {
+				else if(MapScores[i] == -1 || MapScores[i] >= 1)
 					ACS_NamedExecuteAlways("Output_Client", 0, i, 1, 0);
-				}
 				else
-				{
 					ACS_NamedExecuteAlways("Output_Client", 0, i, 0, 0);
-				}
 			}
 		}
 	}
