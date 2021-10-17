@@ -113,7 +113,7 @@ global int 61:BankCredits;
 
 bool strongholdrejuvenated;
 
-strict namespace ssc
+strict namespace
 {
 	bool CheckServerBinary()
 	{
