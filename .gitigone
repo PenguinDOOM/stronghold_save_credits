@@ -1,2 +1,7 @@
+*.pk3
+*.err
+*.bak
+*.lnk
+*.ico
 *.o
-acs/
+desktop.ini
