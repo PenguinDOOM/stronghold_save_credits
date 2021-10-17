@@ -12,3 +12,6 @@ alias admin_bank_reduce "closemenu;pukename \"Admin_ReduceBank\" always 0"
 alias admin_player_peep "closemenu;pukename \"Admin_SeeMoney\" always 0"
 alias admin_player_add "closemenu;pukename \"Admin_AddMoney\" always 0"
 alias admin_player_reduce "closemenu;pukename \"Admin_ReduceMoney\" always 0"
+
+alias SaveCreditDisconnect "closemenu;pukename \"Player_Quit\" always 1"
+alias WithOutSaveCreditDisconnect "closemenu;pukename \"Player_Quit\" always 0"

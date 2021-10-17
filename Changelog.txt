@@ -1,3 +1,11 @@
+v6
+--------------------------------------------------------------
+Improved performance by removing the while loop.
+Rewrote the binary detection code.
+BCSUtils is now used.
+Rewrote a lot of codes.
+Many other fixes, changes, and undiscovered bugs added.
+
 v5_1
 --------------------------------------------------------------
 Fixed a bug that caused a binary check every time.
@@ -53,7 +61,7 @@ Added a script to monitor credits so they are preserved when disconnected. You c
 Added a script to clear the contents of the database. If you use it, you cannot load and save until you reconnect. (Pukename Clear_Credits)
 The "Show_Credits" command can now check if a bank can be used.
 ------------------------
-] pukename clear_credits
+] pukename Show_Credits
 ------------------------
 Paid fee: False or True (here)
 Database paid fee: False or True (here)

@@ -4,3 +4,5 @@ user int admin_amount = 0;
 user noarchive int admin_who = 0;
 user noarchive string admin_reason;
 user int admin_silent;
+
+user noarchive int ssc_number = 0;
