@@ -398,7 +398,7 @@ strict namespace
 				
 			EndDBTransaction();
 			
-			ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
+			NamedExecuteClientScript("Client_Disconnect", pid, 0, 0, 0, 0);
 		}
 		else if((bool)unload && !(bool)save)
 		{
@@ -449,7 +449,7 @@ strict namespace
 		}
 		else
 		{
-			ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
+			NamedExecuteClientScript("Client_Disconnect", pid, 0, 0, 0, 0);
 		}
 	}
 
@@ -461,16 +461,13 @@ strict namespace
 		ACS_NamedExecuteAlways("Save_Process", 0, 0, 1, 0);
 	}
 
-	Script "Client_Disconnect" (int pid) CLIENTSIDE
+	Script "Client_Disconnect" CLIENTSIDE
 	{
-		if(pid == ConsolePlayerNumber())
-		{
-			LoadedCredits[pid] = False;
-			NoStartLoad[pid] = False;
-			
-			Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
-			ConsoleCommand("Disconnect");
-		}
+		LoadedCredits[ConsolePlayerNumber()] = False;
+		NoStartLoad[ConsolePlayerNumber()] = False;
+		
+		Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
+		ConsoleCommand("Disconnect");
 	}
 
 	Script "Client_Disconnect2" (int pid) DISCONNECT
@@ -805,9 +802,9 @@ strict namespace
 		else If(MAPNo != 0)
 		{
 			if(MapScores[MAPNo] == -1 || MapScores[MAPNo] >= 1)
-				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 1, 0);
+				NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, MAPNo, 1, 0);
 			else
-				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 0, 0);
+				NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, MAPNo, 0, 0);
 		}
 		else
 		{
@@ -820,9 +817,9 @@ strict namespace
 				else if(i >= 45 && i <= 49)
 					continue;
 				else if(MapScores[i] == -1 || MapScores[i] >= 1)
-					ACS_NamedExecuteAlways("Output_Client", 0, i, 1, 0);
+					NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, i, 1, 0);
 				else
-					ACS_NamedExecuteAlways("Output_Client", 0, i, 0, 0);
+					NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, i, 0, 0);
 			}
 		}
 	}
