@@ -101,7 +101,7 @@ global bool 56:STR56Open;
 global bool 57:FamiliarMapsOpen;
 
  // I don't want to use global variables, but cvar breaks the script because it is modifiable.
- // global bool 12:EnableMods;
+global bool 12:EnableMods;
 global bool 13:LoadedBankCredits;
 global bool 14:LoadedCredits[MAXPLAYERS];
  // global bool 15:LockedSave[MAXPLAYERS];
@@ -165,8 +165,6 @@ strict namespace
 
 	void CheckMode()
 	{
-		bool EnableMods;
-		
 		switch(GameType())
 		{
 			case GAME_NET_COOPERATIVE:
@@ -190,6 +188,9 @@ strict namespace
 		Delay(35);
 		
 		CheckMode();
+		
+		if(!EnableMods)
+			terminate;
 		
 		strongholdrejuvenated = CheckRejuvenatedServer();
 		
@@ -268,7 +269,8 @@ strict namespace
 
 	Script "Check_Load" ENTER
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(PlayerNumber()))
 		{
@@ -289,7 +291,8 @@ strict namespace
 
 	Script "Credits_Loading" NET 
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(LoadedCredits[PlayerNumber()] || !PlayerIsLoggedIn(PlayerNumber()) || !PlayerInGame(PlayerNumber()) || !(bool)GetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber())))
 			terminate;
@@ -485,7 +488,8 @@ strict namespace
 
 	Script "Server_Seve" UNLOADING
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		ACS_NamedExecuteAlways("Save_Process", 0, 0, 1, 0);
 	}
@@ -510,7 +514,8 @@ strict namespace
 
 	Script "Player_Quit" (int save) NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		int pid = PlayerNumber();
 		
@@ -519,7 +524,8 @@ strict namespace
 
 	Script "Show_Credits" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		str pf = (bool)CheckInventory("StrPaidInitialBankFee") ? "True" : "False";
 		str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) ? "True" : "False";
@@ -529,7 +535,8 @@ strict namespace
 
 	Script "Clear_Credits" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(PlayerNumber()))
 			terminate;
@@ -554,7 +561,8 @@ strict namespace
 
 	Script "Remove_ServerData" (int Progress)// Use pukename
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!Progress)
 		{
@@ -596,7 +604,8 @@ strict namespace
 
 	Script "Give_Permission" (int pid, int del)
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(pid))
 			terminate;
@@ -615,7 +624,8 @@ strict namespace
 
 	Script "Admin_SeeMoney" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
 			terminate;
@@ -630,7 +640,8 @@ strict namespace
 
 	Script "Admin_AddBank" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -666,7 +677,8 @@ strict namespace
 
 	Script "Admin_ReduceBank" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -706,7 +718,8 @@ strict namespace
 
 	Script "Admin_AddMoney" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -752,7 +765,8 @@ strict namespace
 
 	Script "Admin_ReduceMoney" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -798,6 +812,9 @@ strict namespace
 
 	Script "Display_Progress" (int MAPNo) NET
 	{
+		if(!EnableMods)
+			terminate;
+			
 		if(GetUserCVar(PlayerNumber(), "ssc_number") != 0)
 		{
 			MAPNo = GetUserCVar(PlayerNumber(), "ssc_number");
