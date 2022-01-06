@@ -117,50 +117,20 @@ strict namespace
 {
 	bool CheckServerBinary()
 	{
-		if(IsServerOnly())
-		{
-			if(GetCVar("tspg_badwordsenabled")) // Check TSPG
-				return true;
-			else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false")) // Check DUD
-				return true;
-			else
-				return false;
-		}
+		if(GetCVar("tspg_badwordsenabled")) // Check TSPG
+			return true;
+		else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false")) // Check DUD
+			return true;
 		else
-		{
 			return false;
-		}
 	}
 
-	bool CheckRejuvenatedServer()
+	bool CheckRejuvenated()
 	{
-		if(IsServerOnly())
-		{
-			if(SetCVar("stronghold_infinitelives", GetCVar("stronghold_infinitelives")))
-				return true;
-			else
-				return false;
-		}
+		if(SetCVar("stronghold_infinitelives", GetCVar("stronghold_infinitelives")))
+			return true;
 		else
-		{
 			return false;
-		}
-	}
-
-
-	bool CheckRejuvenatedClient(int pid)
-	{
-		if(IsClientOnly())
-		{
-			if(SetUserCVar(pid, "stronghold_cl_announcer", GetUserCVar(pid, "stronghold_cl_announcer")))
-				return true;
-			else
-				return false;
-		}
-		else
-		{
-			return false;
-		}
 	}
 
 	void CheckMode()
@@ -192,7 +162,7 @@ strict namespace
 		if(!EnableMods)
 			terminate;
 		
-		strongholdrejuvenated = CheckRejuvenatedServer();
+		strongholdrejuvenated = CheckRejuvenated();
 		
 		str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
 		
@@ -387,9 +357,6 @@ strict namespace
 		int ptid;
 		str SaveAccountName;
 		int CacheCredit;
-		
-		if(IsClientOnly())
-			terminate;
 			
 		if(!(bool)unload && (bool)save)
 		{
