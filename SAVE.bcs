@@ -101,7 +101,7 @@ global bool 56:STR56Open;
 global bool 57:FamiliarMapsOpen;
 
  // I don't want to use global variables, but cvar breaks the script because it is modifiable.
- // global bool 12:EnableMods;
+global bool 12:EnableMods;
 global bool 13:LoadedBankCredits;
 global bool 14:LoadedCredits[MAXPLAYERS];
  // global bool 15:LockedSave[MAXPLAYERS];
@@ -117,56 +117,24 @@ strict namespace
 {
 	bool CheckServerBinary()
 	{
-		if(IsServerOnly())
-		{
-			if(GetCVar("tspg_badwordsenabled")) // Check TSPG
-				return true;
-			else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false")) // Check DUD
-				return true;
-			else
-				return false;
-		}
+		if(GetCVar("tspg_badwordsenabled")) // Check TSPG
+			return true;
+		else if(StrIEquals(GetCVarString("tspg_badwordsenabled"), "false")) // Check DUD
+			return true;
 		else
-		{
 			return false;
-		}
 	}
 
-	bool CheckRejuvenatedServer()
+	bool CheckRejuvenated()
 	{
-		if(IsServerOnly())
-		{
-			if(SetCVar("stronghold_infinitelives", GetCVar("stronghold_infinitelives")))
-				return true;
-			else
-				return false;
-		}
+		if(SetCVar("stronghold_infinitelives", GetCVar("stronghold_infinitelives")))
+			return true;
 		else
-		{
 			return false;
-		}
-	}
-
-
-	bool CheckRejuvenatedClient(int pid)
-	{
-		if(IsClientOnly())
-		{
-			if(SetUserCVar(pid, "stronghold_cl_announcer", GetUserCVar(pid, "stronghold_cl_announcer")))
-				return true;
-			else
-				return false;
-		}
-		else
-		{
-			return false;
-		}
 	}
 
 	void CheckMode()
 	{
-		bool EnableMods;
-		
 		switch(GameType())
 		{
 			case GAME_NET_COOPERATIVE:
@@ -191,7 +159,10 @@ strict namespace
 		
 		CheckMode();
 		
-		strongholdrejuvenated = CheckRejuvenatedServer();
+		if(!EnableMods)
+			terminate;
+		
+		strongholdrejuvenated = CheckRejuvenated();
 		
 		str MPD = "MapProgressData", MPD2, SCD = "Str52CodeData", SCD2;
 		
@@ -268,7 +239,8 @@ strict namespace
 
 	Script "Check_Load" ENTER
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(PlayerNumber()))
 		{
@@ -289,7 +261,8 @@ strict namespace
 
 	Script "Credits_Loading" NET 
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(LoadedCredits[PlayerNumber()] || !PlayerIsLoggedIn(PlayerNumber()) || !PlayerInGame(PlayerNumber()) || !(bool)GetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber())))
 			terminate;
@@ -384,9 +357,6 @@ strict namespace
 		int ptid;
 		str SaveAccountName;
 		int CacheCredit;
-		
-		if(IsClientOnly())
-			terminate;
 			
 		if(!(bool)unload && (bool)save)
 		{
@@ -428,7 +398,7 @@ strict namespace
 				
 			EndDBTransaction();
 			
-			ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
+			NamedExecuteClientScript("Client_Disconnect", pid, 0, 0, 0, 0);
 		}
 		else if((bool)unload && !(bool)save)
 		{
@@ -479,27 +449,25 @@ strict namespace
 		}
 		else
 		{
-			ACS_NamedExecuteAlways("Client_Disconnect", 0, pid, 0, 0);
+			NamedExecuteClientScript("Client_Disconnect", pid, 0, 0, 0, 0);
 		}
 	}
 
 	Script "Server_Seve" UNLOADING
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		ACS_NamedExecuteAlways("Save_Process", 0, 0, 1, 0);
 	}
 
-	Script "Client_Disconnect" (int pid) CLIENTSIDE
+	Script "Client_Disconnect" CLIENTSIDE
 	{
-		if(pid == ConsolePlayerNumber())
-		{
-			LoadedCredits[pid] = False;
-			NoStartLoad[pid] = False;
-			
-			Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
-			ConsoleCommand("Disconnect");
-		}
+		LoadedCredits[ConsolePlayerNumber()] = False;
+		NoStartLoad[ConsolePlayerNumber()] = False;
+		
+		Print(s:"Want to quit the game?\nType quit or exit, or select 'Without Save and Exit Game' from the quit menu.");
+		ConsoleCommand("Disconnect");
 	}
 
 	Script "Client_Disconnect2" (int pid) DISCONNECT
@@ -510,7 +478,8 @@ strict namespace
 
 	Script "Player_Quit" (int save) NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		int pid = PlayerNumber();
 		
@@ -519,7 +488,8 @@ strict namespace
 
 	Script "Show_Credits" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		str pf = (bool)CheckInventory("StrPaidInitialBankFee") ? "True" : "False";
 		str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) ? "True" : "False";
@@ -529,7 +499,8 @@ strict namespace
 
 	Script "Clear_Credits" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(PlayerNumber()))
 			terminate;
@@ -554,7 +525,8 @@ strict namespace
 
 	Script "Remove_ServerData" (int Progress)// Use pukename
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!Progress)
 		{
@@ -596,7 +568,8 @@ strict namespace
 
 	Script "Give_Permission" (int pid, int del)
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(pid))
 			terminate;
@@ -615,7 +588,8 @@ strict namespace
 
 	Script "Admin_SeeMoney" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
 			terminate;
@@ -630,7 +604,8 @@ strict namespace
 
 	Script "Admin_AddBank" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -666,7 +641,8 @@ strict namespace
 
 	Script "Admin_ReduceBank" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -706,7 +682,8 @@ strict namespace
 
 	Script "Admin_AddMoney" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -752,7 +729,8 @@ strict namespace
 
 	Script "Admin_ReduceMoney" NET
 	{
-		CheckMode();
+		if(!EnableMods)
+			terminate;
 		
 		if(CheckPublic)
 		{
@@ -798,6 +776,9 @@ strict namespace
 
 	Script "Display_Progress" (int MAPNo) NET
 	{
+		if(!EnableMods)
+			terminate;
+			
 		if(GetUserCVar(PlayerNumber(), "ssc_number") != 0)
 		{
 			MAPNo = GetUserCVar(PlayerNumber(), "ssc_number");
@@ -821,9 +802,9 @@ strict namespace
 		else If(MAPNo != 0)
 		{
 			if(MapScores[MAPNo] == -1 || MapScores[MAPNo] >= 1)
-				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 1, 0);
+				NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, MAPNo, 1, 0);
 			else
-				ACS_NamedExecuteAlways("Output_Client", 0, MAPNo, 0, 0);
+				NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, MAPNo, 0, 0);
 		}
 		else
 		{
@@ -836,9 +817,9 @@ strict namespace
 				else if(i >= 45 && i <= 49)
 					continue;
 				else if(MapScores[i] == -1 || MapScores[i] >= 1)
-					ACS_NamedExecuteAlways("Output_Client", 0, i, 1, 0);
+					NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, i, 1, 0);
 				else
-					ACS_NamedExecuteAlways("Output_Client", 0, i, 0, 0);
+					NamedExecuteClientScript("Output_Client", PlayerNumber(), 0, i, 0, 0);
 			}
 		}
 	}
