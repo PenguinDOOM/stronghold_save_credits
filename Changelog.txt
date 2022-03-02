@@ -1,20 +1,26 @@
+v7
+--------------------------------------------------------------
+This is minor update, but it's v7 because it uses the new features of 3.1
+Optimizing network traffic using the new features added in 3.1
+Removed Server/Client check codes.
+Fixed code that doesn't work.
+
 v6
 --------------------------------------------------------------
 Improved performance by removing the while loop.
 Rewrote the binary detection code.
 BCSUtils is now used.
 Rewrote a lot of codes.
-Many other fixes, changes, and undiscovered bugs added.
+Many other fixes, changes.
 
 v5_1
 --------------------------------------------------------------
 Fixed a bug that caused a binary check every time.
-Fixed v4 changelog.
 Added "Display_Progress" command
 
 How to use "Display_Progress"
 -----------------------
-] pukename Display_Progress [Map number](optional argument)
+pukename Display_Progress [Map number](optional argument)
 -----------------------
 This prints all progress to the client's console.
 Adding an argument will print the progress of the map accordingly.
@@ -45,7 +51,7 @@ Added "Remove_ServerData" command
 
 How to use "Remove_ServerData"
 -----------------------
-] pukename Remove_ServerData (0 or 1)
+pukename Remove_ServerData (0 or 1)
 -----------------------
 If nothing is added or 0 is added as an argument, only the server bank will be deleted.
 If you add 1 to the argument, the completed stage data will be deleted.
@@ -61,7 +67,7 @@ Added a script to monitor credits so they are preserved when disconnected. You c
 Added a script to clear the contents of the database. If you use it, you cannot load and save until you reconnect. (Pukename Clear_Credits)
 The "Show_Credits" command can now check if a bank can be used.
 ------------------------
-] pukename Show_Credits
+pukename Show_Credits
 ------------------------
 Paid fee: False or True (here)
 Database paid fee: False or True (here)
@@ -73,9 +79,6 @@ Bank databse credits: 0 ~
 
 Use variables instead of cvar.
 Some code has been modified / changed.
-The code has become more complex and less readable.
-There should be some bugs added that are not yet known.
-
 
 v2
 --------------------------------------------------------------
@@ -83,3 +86,6 @@ Added saving bank credits(strongholdrejuvenated required)
 Changed loaded check from inventory to user cvar.
 Clarified the "Show_Credits" command.(pukename show_credits)
 
+Before
+--------------------------------------------------------------
+I forgot what it was.
