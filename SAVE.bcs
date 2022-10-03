@@ -155,6 +155,23 @@ strict namespace
 				break;
 		}
 	}
+	
+	Script "Players_Count" OPEN
+	{
+		SetCVar("SSC_TID", UniqueTID());
+		SyncVariable(GetCVar("SSC_TID"), ClientCount());
+	}
+
+	Script "Connect_Count" (int type, int arg1, int arg2) EVENT
+	{
+		if(GAMEEVENT_PLAYERCONNECT == type)
+			SyncVariable(GetCVar("SSC_TID"), ClientCount());
+	}
+
+	Script "Disconnect_Count" (int arg) DISCONNECT
+	{
+		SyncVariable(GetCVar("SSC_TID"), ClientCount());
+	}
 
 	Script "Server_Start" OPEN
 	{
@@ -357,9 +374,8 @@ strict namespace
 
 	Script "Save_Process" (int pid, int unload, int save)
 	{
-		int ptid;
+		int ptid, CacheCredit, count, temp;
 		str SaveAccountName;
-		int CacheCredit;
 			
 		if(!bool(unload) && bool(save))
 		{
@@ -405,10 +421,18 @@ strict namespace
 		}
 		else if(bool(unload) && !bool(save))
 		{
+			temp = GetCVar("SSC_TID");
+			
 			BeginDBTransaction();
 			
 				for(int i = 0; i < MAXPLAYERS; i++)
 				{
+					if(count >= temp)
+						break;
+			
+					if(PlayerIsConnected(i)) //Count the number of players and optimize the loop.
+						count++;
+					
 					ptid = PLAYERS_TID + i;
 					
 					if(!PlayerInGame(i) || !PlayerIsLoggedIn(i))
