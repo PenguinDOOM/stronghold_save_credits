@@ -79,17 +79,20 @@ ACSUtils uses code from ACS-X:
 	DEALINGS IN THE SOFTWARE.
 */
 
+// 10/03/2022
 
 #library "SAVE"
 
+#define __ZANDRONUM__
+
 #include "zcommon.h"
 #include "bcsutils.bcs"
+using BCSUtils;
 
 #define MAXPLAYERS 64
 #define PLAYERS_TID 5000
 #define GAME_NET_TEAMGAME 4
 
-using BCSUtils;
 
 global int 1:MapScores[];
 global int 2:str52code[];
@@ -152,6 +155,23 @@ strict namespace
 				break;
 		}
 	}
+	
+	Script "Players_Count" OPEN
+	{
+		SetCVar("SSC_TID", UniqueTID());
+		SyncVariable(GetCVar("SSC_TID"), ClientCount());
+	}
+
+	Script "Connect_Count" (int type, int arg1, int arg2) EVENT
+	{
+		if(GAMEEVENT_PLAYERCONNECT == type)
+			SyncVariable(GetCVar("SSC_TID"), ClientCount());
+	}
+
+	Script "Disconnect_Count" (int arg) DISCONNECT
+	{
+		SyncVariable(GetCVar("SSC_TID"), ClientCount());
+	}
 
 	Script "Server_Start" OPEN
 	{
@@ -194,12 +214,12 @@ strict namespace
 			}
 			
 			BankCredits = GetDBEntry("BankCredits", "ServerBankCredits");
-			str52codeinit = (bool)GetDBEntry("ServerProgress", "Str52CodeinitData");
-			STR50Open = (bool)GetDBEntry("ServerProgress", "Str50Data");
-			STR52Open = (bool)GetDBEntry("ServerProgress", "Str52Data");
-			STR54Open = (bool)GetDBEntry("ServerProgress", "Str54Data");
-			STR56Open = (bool)GetDBEntry("ServerProgress", "Str56Data");
-			FamiliarMapsOpen = (bool)GetDBEntry("ServerProgress", "FamiliarMapsData");
+			str52codeinit = bool(GetDBEntry("ServerProgress", "Str52CodeinitData"));
+			STR50Open = bool(GetDBEntry("ServerProgress", "Str50Data"));
+			STR52Open = bool(GetDBEntry("ServerProgress", "Str52Data"));
+			STR54Open = bool(GetDBEntry("ServerProgress", "Str54Data"));
+			STR56Open = bool(GetDBEntry("ServerProgress", "Str56Data"));
+			FamiliarMapsOpen = bool(GetDBEntry("ServerProgress", "FamiliarMapsData"));
 			LoadedBankCredits = True;
 			
 			log(s:"Loaded Server Data");
@@ -225,12 +245,12 @@ strict namespace
 			}
 			
 			SetDBEntry("BankCredits", "ServerBankCredits", BankCredits);
-			SetDBEntry("ServerProgress", "Str52CodeinitData", (int)str52codeinit);
-			SetDBEntry("ServerProgress", "Str50Data", (int)STR50Open);
-			SetDBEntry("ServerProgress", "Str52Data", (int)STR52Open);
-			SetDBEntry("ServerProgress", "Str54Data", (int)STR54Open);
-			SetDBEntry("ServerProgress", "Str56Data", (int)STR56Open);
-			SetDBEntry("ServerProgress", "FamiliarMapsData", (int)FamiliarMapsOpen);
+			SetDBEntry("ServerProgress", "Str52CodeinitData", int(str52codeinit));
+			SetDBEntry("ServerProgress", "Str50Data", int(STR50Open));
+			SetDBEntry("ServerProgress", "Str52Data", int(STR52Open));
+			SetDBEntry("ServerProgress", "Str54Data", int(STR54Open));
+			SetDBEntry("ServerProgress", "Str56Data", int(STR56Open));
+			SetDBEntry("ServerProgress", "FamiliarMapsData", int(FamiliarMapsOpen));
 			
 		EndDBTransaction();
 		
@@ -264,7 +284,7 @@ strict namespace
 		if(!EnableMods)
 			terminate;
 		
-		if(LoadedCredits[PlayerNumber()] || !PlayerIsLoggedIn(PlayerNumber()) || !PlayerInGame(PlayerNumber()) || !(bool)GetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber())))
+		if(LoadedCredits[PlayerNumber()] || !PlayerIsLoggedIn(PlayerNumber()) || !PlayerInGame(PlayerNumber()) || !bool(GetDBEntry("HasAccount", GetPlayerAccountName(PlayerNumber()))))
 			terminate;
 		
 		int CacheCredits_A = GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), CacheCredits_B = CheckInventory("CoinItem");
@@ -321,18 +341,18 @@ strict namespace
 			}
 			else
 			{
-				if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()])
+				if(bool(GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()))) && !NoStartLoad[PlayerNumber()])
 				{
 					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
 					GiveInventory("StrPaidInitialBankFee", 1);
 				}
-				else if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && NoStartLoad[PlayerNumber()])
+				else if(!bool(GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()))) && NoStartLoad[PlayerNumber()])
 				{
 					CacheCredits_B += CacheCredits_A;
 					
 					GiveInventory("CoinItem", Clamp(CacheCredits_B, 0, 100000));
 				}
-				else if(!(bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) && !NoStartLoad[PlayerNumber()])
+				else if(!bool(GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()))) && !NoStartLoad[PlayerNumber()])
 				{
 					GiveInventory("CoinItem", Clamp(CacheCredits_A, 0, 100000));
 				}
@@ -354,11 +374,10 @@ strict namespace
 
 	Script "Save_Process" (int pid, int unload, int save)
 	{
-		int ptid;
+		int ptid, CacheCredit, count, temp;
 		str SaveAccountName;
-		int CacheCredit;
 			
-		if(!(bool)unload && (bool)save)
+		if(!bool(unload) && bool(save))
 		{
 			BeginDBTransaction();
 			
@@ -369,9 +388,9 @@ strict namespace
 					
 					if(strongholdrejuvenated)
 					{
-						if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckInventory("StrPaidInitialBankFee"))
+						if(!bool(GetDBEntry("Paidfee", SaveAccountName)) && bool(CheckInventory("StrPaidInitialBankFee")))
 							SetDBEntry("Paidfee", SaveAccountName, 1);
-						else if(!LoadedCredits[pid] && (bool)GetDBEntry("HasAccount", SaveAccountName) && !(bool)CheckInventory("StrPaidInitialBankFee"))
+						else if(!LoadedCredits[pid] && bool(GetDBEntry("HasAccount", SaveAccountName)) && !bool(CheckInventory("StrPaidInitialBankFee")))
 							CacheCredit -= StartingCredits < 800 ? 800 : StartingCredits;
 							
 					}
@@ -379,7 +398,7 @@ strict namespace
 					{
 						CacheCredit -= 300;
 					}
-					if(!(bool)GetDBEntry("HasAccount", SaveAccountName))
+					if(!bool(GetDBEntry("HasAccount", SaveAccountName)))
 					{
 						SetDBEntry("HasAccount", SaveAccountName, 1);
 						log(s:"Create player", d:pid, s:"'s account.");
@@ -400,12 +419,20 @@ strict namespace
 			
 			NamedExecuteClientScript("Client_Disconnect", pid, 0, 0, 0, 0);
 		}
-		else if((bool)unload && !(bool)save)
+		else if(bool(unload) && !bool(save))
 		{
+			temp = GetCVar("SSC_TID");
+			
 			BeginDBTransaction();
 			
 				for(int i = 0; i < MAXPLAYERS; i++)
 				{
+					if(count >= temp)
+						break;
+			
+					if(PlayerIsConnected(i)) //Count the number of players and optimize the loop.
+						count++;
+					
 					ptid = PLAYERS_TID + i;
 					
 					if(!PlayerInGame(i) || !PlayerIsLoggedIn(i))
@@ -416,9 +443,9 @@ strict namespace
 					
 					if(strongholdrejuvenated)
 					{
-						if(!(bool)GetDBEntry("Paidfee", SaveAccountName) && (bool)CheckActorInventory(ptid, "StrPaidInitialBankFee"))
+						if(!bool(GetDBEntry("Paidfee", SaveAccountName)) && bool(CheckActorInventory(ptid, "StrPaidInitialBankFee")))
 							SetDBEntry("Paidfee", SaveAccountName, 1);
-						else if(!LoadedCredits[i] && (bool)GetDBEntry("HasAccount", SaveAccountName) && !(bool)CheckActorInventory(ptid, "StrPaidInitialBankFee"))
+						else if(!LoadedCredits[i] && bool(GetDBEntry("HasAccount", SaveAccountName)) && !bool(CheckActorInventory(ptid, "StrPaidInitialBankFee")))
 							CacheCredit -= StartingCredits < 800 ? 800 : StartingCredits;
 							
 					}
@@ -426,7 +453,7 @@ strict namespace
 					{
 						CacheCredit -= 300;
 					}
-					if(!(bool)GetDBEntry("HasAccount", SaveAccountName))
+					if(!bool(GetDBEntry("HasAccount", SaveAccountName)))
 					{
 						SetDBEntry("HasAccount", SaveAccountName, 1);
 						log(s:"Create player", d:pid, s:"'s account.");
@@ -491,8 +518,8 @@ strict namespace
 		if(!EnableMods)
 			terminate;
 		
-		str pf = (bool)CheckInventory("StrPaidInitialBankFee") ? "True" : "False";
-		str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())) ? "True" : "False";
+		str pf = bool(CheckInventory("StrPaidInitialBankFee")) ? "True" : "False";
+		str dpf = bool(GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()))) ? "True" : "False";
 		
 		Print(s:"Paid fee: ", s:pf, s:"\n", s:"Database paid fee: ", s:dpf, s:"\n", s:"Your credits: ", d:CheckInventory("CoinItem"), s:"\n",s:"Your database credits: ", d:GetDBEntry("Credits", GetPlayerAccountName(PlayerNumber())), s:"\n", s:"Bank credits: ", d:BankCredits, s:"\n", s:"Bank database credits: ", d:GetDBEntry("BankCredits", "ServerBankCredits"));
 	}
@@ -591,13 +618,13 @@ strict namespace
 		if(!EnableMods)
 			terminate;
 		
-		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
+		if(!PlayerIsLoggedIn(PlayerNumber()) || !bool(GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber())))) 
 			terminate;
 			
 		int who = GetUserCVar(PlayerNumber(), "admin_who");
 		int ptid = PLAYERS_TID + who;
-		str pf = (bool)CheckActorInventory(ptid, "StrPaidInitialBankFee") ? "True" : "False";
-		str dpf = (bool)GetDBEntry("Paidfee", GetPlayerAccountName(who)) ? "True" : "False";
+		str pf = bool(CheckActorInventory(ptid, "StrPaidInitialBankFee")) ? "True" : "False";
+		str dpf = bool(GetDBEntry("Paidfee", GetPlayerAccountName(who))) ? "True" : "False";
 		
 		Print(s:"Paid fee: ", s:pf, s:"\n", s:"Database paid fee: ", s:dpf, s:"\n", n:who, s:"'s credits: ", d:CheckActorInventory(ptid, "CoinItem"), s:"\n", n:who, s:"'s database credits: ", d:GetDBEntry("Credits", GetPlayerAccountName(who))); 
 	}
@@ -613,7 +640,7 @@ strict namespace
 			terminate;
 		}
 		
-		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
+		if(!PlayerIsLoggedIn(PlayerNumber()) || !bool(GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber())))) 
 			terminate;
 			
 		int amount = GetUserCVar(PlayerNumber(), "admin_amount");
@@ -623,7 +650,7 @@ strict namespace
 		if(StrCmp(reason, "" ) == 0)
 			reason = "Not given";
 			
-		if(!(bool)silent)
+		if(!bool(silent))
 		{
 			BankCredits += amount;
 			Delay(1);
@@ -650,7 +677,7 @@ strict namespace
 			terminate;
 		}
 		
-		if(!PlayerIsLoggedIn(PlayerNumber()) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber()))) 
+		if(!PlayerIsLoggedIn(PlayerNumber()) || !bool(GetDBEntry("Admin", GetPlayerAccountName(PlayerNumber())))) 
 			terminate;
 			
 		int amount = GetUserCVar(PlayerNumber(), "admin_amount");
@@ -660,7 +687,7 @@ strict namespace
 		if(StrCmp(reason, "" ) == 0)
 			reason = "Not given";
 			
-		if(!(bool)silent)
+		if(!bool(silent))
 		{
 			BankCredits -= amount;
 			
@@ -700,10 +727,10 @@ strict namespace
 		if(StrCmp(reason, "" ) == 0)
 			reason = "Not given";
 			
-		if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
+		if(!PlayerIsLoggedIn(pid) || !bool(GetDBEntry("Admin", GetPlayerAccountName(pid))) || !PlayerInGame(who)) 
 			terminate;
 			
-		if(!(bool)silent)
+		if(!bool(silent))
 		{
 			GiveActorInventory(PLAYERS_TID + who, "CoinItem", amount);
 			
@@ -747,10 +774,10 @@ strict namespace
 		if(StrCmp(reason, "" ) == 0)
 			reason = "Not given";
 			
-		if(!PlayerIsLoggedIn(pid) || !(bool)GetDBEntry("Admin", GetPlayerAccountName(pid)) || !PlayerInGame(who)) 
+		if(!PlayerIsLoggedIn(pid) || !bool(GetDBEntry("Admin", GetPlayerAccountName(pid))) || !PlayerInGame(who)) 
 			terminate;
 			
-		if(!(bool)silent)
+		if(!bool(silent))
 		{
 			TakeActorInventory(PLAYERS_TID + who, "CoinItem", amount);
 			
