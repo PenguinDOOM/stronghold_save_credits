@@ -1,8 +1,11 @@
-// Stronghold Save Credits Licence
 /*
+--------------------------------------------------------------------------------
+Stronghold Save Credits Licence
+--------------------------------------------------------------------------------
+
 MIT License
 
-Copyright (c) 2020 - 2021 Penguin
+Copyright (c) 2020-2022 Penguin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,34 +24,33 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-*/
 
-//BCS Licence
-/*
-The MIT License (MIT)
+--------------------------------------------------------------------------------
+BCSUtils License
+--------------------------------------------------------------------------------
 
-Copyright (c) 2013 Daniel Baimiachkine
+MIT License
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+Copyright (c) 2016-2017 Alexander Korshun and the ACSUtils contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-// ACSUtils Licence
-/*
 ACSUtils uses code from ACS-X:	
 	
 	Copyright Ben Moir 2016
@@ -77,9 +79,11 @@ ACSUtils uses code from ACS-X:
 	FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 	DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------------------------------------------
 */
 
-// 10/03/2022
+// 10/13/2022
 
 #library "SAVE"
 
@@ -89,7 +93,6 @@ ACSUtils uses code from ACS-X:
 #include "bcsutils.bcs"
 using BCSUtils;
 
-#define MAXPLAYERS 64
 #define PLAYERS_TID 5000
 #define GAME_NET_TEAMGAME 4
 
@@ -106,10 +109,10 @@ global bool 57:FamiliarMapsOpen;
  // I don't want to use global variables, but cvar breaks the script because it is modifiable.
 global bool 12:EnableMods;
 global bool 13:LoadedBankCredits;
-global bool 14:LoadedCredits[MAXPLAYERS];
- // global bool 15:LockedSave[MAXPLAYERS];
+global bool 14:LoadedCredits[MAX_PLAYERS];
+// global bool 15:LockedSave[MAX_PLAYERS];
 global bool 16:CheckPublic;
-global bool 18:NoStartLoad[MAXPLAYERS];
+global bool 18:NoStartLoad[MAX_PLAYERS];
 
 global int 60:StartingCredits;
 global int 61:BankCredits;
@@ -307,9 +310,9 @@ strict namespace
 		}
 		else
 		{	
-			if(!(bool)CheckInventory("StrPaidInitialBankFee"))
+			if(!bool(CheckInventory("StrPaidInitialBankFee")))
 			{
-				if((bool)GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber())))
+				if(bool(GetDBEntry("Paidfee", GetPlayerAccountName(PlayerNumber()))))
 				{
 					if(!NoStartLoad[PlayerNumber()])
 					{
@@ -425,7 +428,7 @@ strict namespace
 			
 			BeginDBTransaction();
 			
-				for(int i = 0; i < MAXPLAYERS; i++)
+				for(int i = 0; i < MAX_PLAYERS; i++)
 				{
 					if(count >= temp)
 						break;
